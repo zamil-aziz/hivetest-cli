@@ -9,6 +9,9 @@
   "scripts": {
     "start": "node bin/hivetest.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": ["qa", "testing", "claude", "orchestrator"],
   "author": "zamil-aziz",
   "license": "MIT",

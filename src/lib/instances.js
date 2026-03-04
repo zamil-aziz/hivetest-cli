@@ -1,6 +1,6 @@
 import { mkdir, rm, symlink, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { resolve, dirname, basename } from 'path';
+import { resolve, dirname } from 'path';
 import { writeMcpConfig } from './mcp.js';
 
 /**

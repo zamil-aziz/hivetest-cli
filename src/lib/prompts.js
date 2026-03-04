@@ -55,7 +55,7 @@ Start by navigating to the application URL.`;
 /**
  * Build the prompt for the execute phase (Sonnet runs test plans).
  */
-export function buildExecutePrompt(config, planFiles, password) {
+export function buildExecutePrompt(config, planFiles) {
   const planList = planFiles
     .map((f) => `- ${config.directories.testPlans}/${f}`)
     .join('\n');
@@ -65,7 +65,7 @@ export function buildExecutePrompt(config, planFiles, password) {
 ## Application
 - **URL**: ${config.url}
 - **Test account**: ${config.auth.email}
-- **Password**: ${password}
+- **Password**: Read from the HIVETEST_PASSWORD environment variable (run: echo $HIVETEST_PASSWORD in bash)
 
 ## Test Plans to Execute
 ${planList}

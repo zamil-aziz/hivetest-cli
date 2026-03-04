@@ -71,8 +71,11 @@ export function parseResultsFile(content, filename, jiraProject) {
     const cells = line.split('|').map((c) => c.trim()).filter(Boolean);
     if (cells[0] === '#' || cells[0] === 'ID') continue;
 
-    // Find status in the row
-    const statusCell = cells.find((c) => STATUS_PATTERN.test(c));
+    // Use column index 2 (0-indexed) for Status in | # | Test Case | Status | Notes |
+    // Fall back to scanning all cells if column 2 doesn't contain a status
+    const statusCell = (cells.length > 2 && STATUS_PATTERN.test(cells[2]))
+      ? cells[2]
+      : cells.find((c) => STATUS_PATTERN.test(c));
     if (statusCell) {
       const status = statusCell.match(STATUS_PATTERN)?.[0]?.toLowerCase();
       if (status && result.counts[status] !== undefined) {

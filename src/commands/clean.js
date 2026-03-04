@@ -17,7 +17,7 @@ export async function cleanCommand(options) {
   // Find playwright temp dirs
   const playwrightTmpDirs = [];
   if (config.playwright?.userDataDirPrefix) {
-    const scanLimit = Math.max(config.maxInstances || 0, 20);
+    const scanLimit = config.maxInstances;
     for (let i = 1; i <= scanLimit; i++) {
       const dir = `${config.playwright.userDataDirPrefix}-${i}`;
       if (existsSync(dir)) {
@@ -27,8 +27,10 @@ export async function cleanCommand(options) {
   }
 
   const hasTmux = sessionExists();
+  const hivetestDir = resolve(cwd, '.hivetest');
+  const hasHivetestDir = existsSync(hivetestDir);
 
-  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasTmux) {
+  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasTmux && !hasHivetestDir) {
     console.log(chalk.green('Nothing to clean up.'));
     return;
   }
@@ -46,6 +48,9 @@ export async function cleanCommand(options) {
     for (const dir of playwrightTmpDirs) {
       console.log(`    ${dir}`);
     }
+  }
+  if (hasHivetestDir) {
+    console.log(chalk.gray(`  Local temp: ${hivetestDir}`));
   }
   if (hasTmux) {
     console.log(chalk.gray('  tmux session: hivetest'));
@@ -86,8 +91,7 @@ export async function cleanCommand(options) {
   }
 
   // Remove .hivetest directory
-  const hivetestDir = resolve(cwd, '.hivetest');
-  if (existsSync(hivetestDir)) {
+  if (hasHivetestDir) {
     await rm(hivetestDir, { recursive: true, force: true });
     console.log(chalk.green('  Removed .hivetest/'));
   }

@@ -46,7 +46,7 @@ export async function initCommand() {
       type: 'input',
       name: 'url',
       message: 'Application URL:',
-      validate: (v) => v.startsWith('http') || 'Must be a valid URL',
+      validate: (v) => (v.startsWith('http://') || v.startsWith('https://')) || 'Must be a valid URL (http:// or https://)',
     },
     {
       type: 'input',
