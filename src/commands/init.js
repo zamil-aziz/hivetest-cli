@@ -60,12 +60,6 @@ export async function initCommand() {
     },
     {
       type: 'input',
-      name: 'passwordEnvVar',
-      message: 'Environment variable name for password:',
-      default: 'HIVETEST_PASSWORD',
-    },
-    {
-      type: 'input',
       name: 'jiraProject',
       message: 'Jira project key (leave empty to skip):',
     },
@@ -75,13 +69,6 @@ export async function initCommand() {
       message: 'Jira ticket title prefix:',
       when: (a) => a.jiraProject,
       default: (a) => `[${a.name}]`,
-    },
-    {
-      type: 'input',
-      name: 'symlinks',
-      message: 'Files to symlink into instances (comma-separated):',
-      default: 'CLAUDE.md',
-      filter: (v) => v.split(',').map((s) => s.trim()).filter(Boolean),
     },
     {
       type: 'number',
@@ -115,21 +102,12 @@ export async function initCommand() {
 
   let playwright = null;
   if (!hasPlaywright) {
-    const { addPlaywright } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'addPlaywright',
-        message: 'Add Playwright MCP for browser automation?',
-        default: true,
-      },
-    ]);
-    if (addPlaywright) {
-      playwright = {
-        command: 'npx',
-        args: ['-y', '@playwright/mcp'],
-        userDataDirPrefix: '/tmp/hivetest-playwright',
-      };
-    }
+    playwright = {
+      command: 'npx',
+      args: ['-y', '@playwright/mcp'],
+      userDataDirPrefix: '/tmp/hivetest-playwright',
+    };
+    console.log(chalk.cyan('Added Playwright MCP for browser automation.'));
   } else {
     // Extract Playwright config from imported servers for separate handling
     for (const [name, server] of Object.entries(mcpServers)) {
@@ -151,7 +129,7 @@ export async function initCommand() {
     description: answers.description,
     auth: {
       email: answers.email,
-      passwordEnvVar: answers.passwordEnvVar,
+      passwordEnvVar: 'HIVETEST_PASSWORD',
     },
     models: {
       generate: 'claude-opus-4-6',
@@ -161,7 +139,7 @@ export async function initCommand() {
       testPlans: 'testplans',
       results: 'results',
     },
-    symlinks: answers.symlinks,
+    symlinks: ['CLAUDE.md'],
     maxInstances: answers.maxInstances,
     mcpServers,
   };
