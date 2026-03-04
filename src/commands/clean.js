@@ -17,7 +17,8 @@ export async function cleanCommand(options) {
   // Find playwright temp dirs
   const playwrightTmpDirs = [];
   if (config.playwright?.userDataDirPrefix) {
-    for (let i = 1; i <= 20; i++) {
+    const scanLimit = Math.max(config.maxInstances || 0, 20);
+    for (let i = 1; i <= scanLimit; i++) {
       const dir = `${config.playwright.userDataDirPrefix}-${i}`;
       if (existsSync(dir)) {
         playwrightTmpDirs.push(dir);

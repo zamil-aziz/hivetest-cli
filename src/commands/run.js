@@ -97,9 +97,13 @@ export async function runCommand(plans, options) {
   }
 
   // Determine number of instances
-  const maxInstances = options.max
+  let maxInstances = options.max
     ? parseInt(options.max, 10)
     : config.maxInstances;
+  if (isNaN(maxInstances)) {
+    console.warn(chalk.yellow(`Invalid --max value "${options.max}", using config default (${config.maxInstances})`));
+    maxInstances = config.maxInstances;
+  }
   const numInstances = Math.min(maxInstances, selectedFiles.length);
 
   // Distribute plans across instances
