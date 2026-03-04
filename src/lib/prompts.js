@@ -10,44 +10,73 @@ export function buildGeneratePrompt(config) {
 - **Description**: ${config.description || 'N/A'}
 - **Test account**: ${config.auth.email}
 
-## Your Task
+## Your Task — Incremental Explore-Then-Write
 
-### Phase 1: Explore the Application
+You will explore the app and write test plans **one section at a time**, writing findings to disk immediately so nothing is lost to context compaction or crashes.
+
+---
+
+### Stage 1: Initial Scan & Setup
+
 1. Navigate to ${config.url} and log in with the test account
-2. Systematically explore EVERY section, page, and feature of the application
-3. Click through all navigation items, tabs, dropdowns, modals, and forms
-4. Note the URL structure, UI patterns, and available features
-5. Query the database schema via the database MCP tool to understand the data model
+2. Map ALL sections from the sidebar/navigation — collect **names and URLs only** (do NOT deep-dive yet)
+3. Query the database schema via the database MCP tool (tables, columns, enums, relationships)
+4. **Write CLAUDE.md immediately** in the current directory with:
+   - Application overview and structure
+   - Complete navigation map (section name → URL path → one-line description)
+   - Database schema documentation (tables, key columns, enums, relationships)
+   - Test account details and key entity IDs
+   - Naming conventions and patterns observed
+   - Testing workflow instructions for executing test plans
+   - Production safety rules
+   - **A progress checklist** at the bottom, like:
+     \`\`\`
+     ## Test Plan Progress
+     - [ ] 01 - Auth & Onboarding
+     - [ ] 02 - Dashboard
+     - [ ] 03 - Patients
+     ... (one entry per section you identified)
+     \`\`\`
+   The checklist numbers define the test plan file numbering.
 
-### Phase 2: Generate CLAUDE.md
-Create/update CLAUDE.md in the current directory with:
-- Application overview and structure
-- Complete sidebar navigation map (section → URL path → description)
-- Database schema documentation (tables, key columns, enums, relationships)
-- Test account details and key entity IDs
-- Naming conventions and patterns observed
-- Testing workflow instructions for executing test plans
-- Production safety rules
+---
 
-### Phase 3: Generate Test Plans
-Create numbered test plan files in the "${config.directories.testPlans}/" directory:
-- One file per major feature area (e.g., 01-auth-onboarding.md, 02-patients.md, etc.)
-- Each test plan should have:
-  - A header with the section name
-  - Prerequisites (what must exist before running)
-  - Numbered test cases with: ID, description, steps, expected result
-  - Test cases should cover: happy path, edge cases, validation, error handling
-  - Use the format: \`| ID | Test Case | Steps | Expected Result |\`
-- Aim for thorough coverage — 20-50 test cases per major section
-- Number files with zero-padded prefixes (01, 02, 03...)
-- Order from foundational (auth, setup) to dependent features
+### Stage 2: Per-Section Loop
 
-### Guidelines
-- Be thorough — explore every button, link, and form
-- Test with both valid and invalid inputs during exploration
-- Note any existing bugs or issues you encounter
-- Reference specific DB tables/columns in test cases where relevant
-- Include cleanup steps where test data is created
+For **each section** in the progress checklist, in order:
+
+1. **Explore** that section thoroughly:
+   - Click every button, link, tab, dropdown, modal, and form
+   - Test with both valid and invalid inputs
+   - Note URL patterns, validation behaviors, field names, error messages
+   - Note any existing bugs or issues you encounter
+2. **Write the test plan file** immediately to \`${config.directories.testPlans}/\`:
+   - Filename matches the checklist (e.g., \`01-auth-onboarding.md\`)
+   - Include: header, prerequisites, numbered test cases
+   - Test cases cover: happy path, edge cases, validation, error handling
+   - Use the format: \`| ID | Test Case | Steps | Expected Result |\`
+   - Aim for 20-50 test cases per section
+   - Reference specific DB tables/columns where relevant
+   - Include cleanup steps where test data is created
+3. **Update CLAUDE.md** — mark the section done (\`[x]\`) and add any new patterns or schema discoveries found during exploration
+4. Move to the next section
+
+---
+
+### Stage 3: Final Review
+
+1. Re-read CLAUDE.md — verify all sections are checked off and documentation is complete
+2. Scan test plan files for consistent numbering and no gaps
+
+---
+
+## Context Management Rules — CRITICAL
+
+- **Write to disk immediately** — every disk write is a checkpoint that survives compaction and crashes
+- **Never hold large findings only in context** — if you discovered something important, write it to CLAUDE.md or the test plan file before moving on
+- **Use /compact proactively** between sections when context feels large (e.g., after exploring a complex section with many DOM snapshots)
+- **After compaction, always re-read CLAUDE.md first** to regain the navigation map, schema, progress state, and patterns before continuing
+- If you resume after a crash, read CLAUDE.md, find the first unchecked section, and continue from there
 
 Start by navigating to the application URL.`;
 }
