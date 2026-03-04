@@ -6,6 +6,7 @@ import inquirer from 'inquirer';
 import { loadConfig, getPassword } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { createInstance } from '../lib/instances.js';
+import { getScreenResolution, calculateWindowLayouts } from '../lib/window-layout.js';
 import { buildExecutePrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
 import { createSession, attachSession, sessionExists, killSession } from '../lib/tmux.js';
@@ -117,6 +118,10 @@ export async function runCommand(plans, options) {
     console.log(chalk.gray(`  Instance ${i + 1}: ${planAssignments[i].join(', ')}`));
   }
 
+  // Calculate window layouts for tiling browser windows
+  const { width: screenWidth, height: screenHeight } = getScreenResolution();
+  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });
 
@@ -125,7 +130,7 @@ export async function runCommand(plans, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1);
+    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i]);
     const prompt = buildExecutePrompt(config, planAssignments[i]);
 
     // Write prompt to a file in the instance directory (no password — that goes via env)
