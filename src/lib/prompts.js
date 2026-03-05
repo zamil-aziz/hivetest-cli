@@ -41,7 +41,33 @@ You will explore the app and write test plans **one section at a time**, writing
 
 ---
 
-### Stage 2: Per-Section Loop
+### Stage 2: Industry Research
+
+Now that you understand the app, research what leading companies in this space prioritize in testing.
+**Timebox this stage to 3-5 searches total, then move on regardless of results.**
+
+1. Based on Stage 1, state the app's category in one line (e.g. "studio management SaaS", "e-commerce platform", "healthcare booking") — write this to CLAUDE.md immediately as the start of the Industry Best Practices section
+2. Run targeted searches using these patterns (substituting the actual category/competitors):
+   - \`"[category] top software companies"\`
+   - \`"[competitor name] features"\`
+   - \`"[category] common bugs edge cases"\`
+   - \`"[category] QA testing checklist"\`
+3. As you find useful findings, **append them to CLAUDE.md incrementally** — do not hold findings only in context
+4. Identify 2-3 benchmark companies and note:
+   - Features/flows they're known for getting right
+   - Edge cases or failure modes common in that industry (e.g. timezone handling, concurrency, payment edge cases, data export, accessibility)
+5. If search results are sparse or the app is too niche, note that and proceed — do not block on this stage
+6. Ensure the **Industry Best Practices** section in CLAUDE.md is complete and placed *before* the Test Plan Progress checklist, containing:
+   - App category
+   - 2-3 benchmark companies
+   - Key test categories leading companies in this space prioritize
+   - Industry-specific edge cases and failure modes
+
+Use these findings in Stage 3 — when writing each section's test cases, add scenarios inspired by the Industry Best Practices in CLAUDE.md.
+
+---
+
+### Stage 3: Per-Section Loop
 
 For **each section** in the progress checklist, in order:
 
@@ -58,12 +84,13 @@ For **each section** in the progress checklist, in order:
    - Aim for 20-50 test cases per section
    - Reference specific DB tables/columns where relevant
    - Include cleanup steps where test data is created
+   - Where relevant, add test cases inspired by the Industry Best Practices documented in CLAUDE.md
 3. **Update CLAUDE.md** — mark the section done (\`[x]\`) and add any new patterns or schema discoveries found during exploration
 4. Move to the next section
 
 ---
 
-### Stage 3: Final Review
+### Stage 4: Final Review
 
 1. Re-read CLAUDE.md — verify all sections are checked off and documentation is complete
 2. Scan test plan files for consistent numbering and no gaps
