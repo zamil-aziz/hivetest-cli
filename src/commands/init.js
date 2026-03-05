@@ -64,18 +64,6 @@ export async function initCommand() {
       message: 'Test account password:',
       mask: '*',
     },
-    {
-      type: 'input',
-      name: 'jiraProject',
-      message: 'Jira project key (leave empty to skip):',
-    },
-    {
-      type: 'input',
-      name: 'jiraPrefix',
-      message: 'Jira ticket title prefix:',
-      when: (a) => a.jiraProject,
-      default: (a) => `[${a.name}]`,
-    },
   ]);
 
   // Build MCP servers config
@@ -142,13 +130,6 @@ export async function initCommand() {
     symlinks: ['CLAUDE.md'],
     mcpServers,
   };
-
-  if (answers.jiraProject) {
-    config.jira = {
-      project: answers.jiraProject,
-      prefix: answers.jiraPrefix,
-    };
-  }
 
   if (playwright) {
     config.playwright = playwright;

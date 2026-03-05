@@ -4,18 +4,17 @@ import { resolve } from 'path';
 const STATUS_PATTERN = /PASS|FAIL|BLOCKED|PENDING/i;
 const TABLE_ROW_PATTERN = /^\|\s*[\w-]+\s*\|/;
 
-// Match Jira-style ticket refs: only after "Jira:", "→", or in a "Bugs Found" section
-const JIRA_REF_PATTERN = /(?:Jira:\s*|→\s*)([A-Z]+-\d+)/g;
+// Match ticket refs: only after "Jira:", "→", or in a "Bugs Found" section
+const TICKET_REF_PATTERN = /(?:Jira:\s*|→\s*)([A-Z]+-\d+)/g;
 const BUGS_SECTION_PATTERN = /^## Bugs Found/i;
 
 /**
  * Parse a single results markdown file.
  * @param {string} content - File content
  * @param {string} filename - File name
- * @param {string} [jiraProject] - Jira project key to filter bug refs (e.g., "HAV")
  * Returns { name, counts: { pass, fail, blocked, pending }, bugs: [] }
  */
-export function parseResultsFile(content, filename, jiraProject) {
+export function parseResultsFile(content, filename) {
   const lines = content.split('\n');
   const result = {
     name: filename.replace(/\.md$/, ''),
@@ -36,24 +35,19 @@ export function parseResultsFile(content, filename, jiraProject) {
       inBugsSection = false;
     }
 
-    // Extract Jira refs from "Jira: XXX" or "→ XXX" patterns anywhere
+    // Extract ticket refs from "Jira: XXX" or "→ XXX" patterns anywhere
     let match;
-    const jiraPattern = new RegExp(JIRA_REF_PATTERN.source, 'g');
-    while ((match = jiraPattern.exec(line)) !== null) {
+    const ticketPattern = new RegExp(TICKET_REF_PATTERN.source, 'g');
+    while ((match = ticketPattern.exec(line)) !== null) {
       const ref = match[1];
-      if (!jiraProject || ref.startsWith(jiraProject + '-')) {
-        if (!result.bugs.includes(ref)) {
-          result.bugs.push(ref);
-        }
+      if (!result.bugs.includes(ref)) {
+        result.bugs.push(ref);
       }
     }
 
     // In bugs section, also match bare ticket refs
     if (inBugsSection) {
-      const ticketPattern = jiraProject
-        ? new RegExp(`\\b(${jiraProject}-\\d+)\\b`, 'g')
-        : /\b([A-Z]{2,}-\d+)\b/g;
-      const bareRefs = [...line.matchAll(ticketPattern)].map((m) => m[1]);
+      const bareRefs = [...line.matchAll(/\b([A-Z]{2,}-\d+)\b/g)].map((m) => m[1]);
       for (const ref of bareRefs) {
         if (!result.bugs.includes(ref)) {
           result.bugs.push(ref);
@@ -92,7 +86,7 @@ export function parseResultsFile(content, filename, jiraProject) {
  * Parse all results files in the results directory.
  * Only picks up files matching NN-name.md pattern (ignores HAV-* verification files).
  */
-export async function parseAllResults(resultsDir, jiraProject) {
+export async function parseAllResults(resultsDir) {
   const files = await readdir(resultsDir);
   const resultFiles = files
     .filter((f) => /^\d{2}-.*\.md$/.test(f))
@@ -101,7 +95,7 @@ export async function parseAllResults(resultsDir, jiraProject) {
   const results = [];
   for (const file of resultFiles) {
     const content = await readFile(resolve(resultsDir, file), 'utf-8');
-    results.push(parseResultsFile(content, file, jiraProject));
+    results.push(parseResultsFile(content, file));
   }
 
   return results;

@@ -15,7 +15,7 @@ export async function reportCommand(options) {
     return;
   }
 
-  const results = await parseAllResults(resultsDir, config.jira?.project);
+  const results = await parseAllResults(resultsDir);
 
   if (results.length === 0) {
     console.log(chalk.yellow('No results files found (expected NN-*.md pattern).'));

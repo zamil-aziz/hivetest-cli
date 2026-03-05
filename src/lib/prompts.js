@@ -163,7 +163,6 @@ Execute each test plan sequentially. For each test plan file:
 - Never use real emails — use testXXX@example.com format
 - After EVERY test case, update the results file immediately
 - If you encounter a bug, note it in the results file
-${config.jira ? `- For bugs, note them but do NOT create Jira tickets automatically` : ''}
 - Use /compact if context gets large, then continue from the results file
 
 Start by reading the first test plan and logging into the application.`;

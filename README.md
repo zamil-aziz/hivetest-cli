@@ -139,10 +139,6 @@ Options:
     "args": ["-y", "@playwright/mcp"],
     "userDataDirPrefix": "/tmp/hivetest-playwright"
   },
-  "jira": {
-    "project": "PROJ",
-    "prefix": "[my-app]"
-  }
 }
 ```
 
@@ -160,7 +156,6 @@ Options:
 | `symlinks` | Files symlinked into each instance directory |
 | `mcpServers` | Additional MCP server configurations (imported from `.mcp.json`) |
 | `playwright` | Playwright MCP configuration with per-instance user data dirs |
-| `jira` | Optional Jira integration (project key and ticket prefix) |
 
 The `maxInstances` value is hardcoded to **4** (2x2 grid layout) and cannot be changed via config.
 
