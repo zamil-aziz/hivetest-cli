@@ -4,7 +4,7 @@ import { readFile, writeFile, unlink } from 'fs/promises';
 import { resolve } from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { loadConfig, getPassword } from '../lib/config.js';
+import { loadConfig, getPassword, loadDotEnv } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { buildGeneratePrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
@@ -13,6 +13,7 @@ import { writeMcpConfig } from '../lib/mcp.js';
 export async function generateCommand() {
   const cwd = process.cwd();
   const config = await loadConfig(cwd);
+  await loadDotEnv(cwd);
 
   checkPrerequisites();
 

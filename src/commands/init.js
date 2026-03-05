@@ -1,4 +1,4 @@
-import { writeFile, readFile, mkdir } from 'fs/promises';
+import { writeFile, readFile, mkdir, appendFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, basename } from 'path';
 import inquirer from 'inquirer';
@@ -57,6 +57,12 @@ export async function initCommand() {
       type: 'input',
       name: 'email',
       message: 'Test account email:',
+    },
+    {
+      type: 'password',
+      name: 'password',
+      message: 'Test account password:',
+      mask: '*',
     },
     {
       type: 'input',
@@ -154,6 +160,19 @@ export async function initCommand() {
     JSON.stringify(config, null, 2) + '\n'
   );
 
+  // Write .env with password
+  await writeFile(resolve(cwd, '.env'), `HIVETEST_PASSWORD=${answers.password}\n`);
+
+  // Append .env to .gitignore (create if missing)
+  const gitignorePath = resolve(cwd, '.gitignore');
+  let gitignoreContent = '';
+  if (existsSync(gitignorePath)) {
+    gitignoreContent = await readFile(gitignorePath, 'utf-8');
+  }
+  if (!gitignoreContent.split('\n').some((line) => line.trim() === '.env')) {
+    await appendFile(gitignorePath, '\n.env\n');
+  }
+
   // Create directories
   for (const dir of [config.directories.testPlans, config.directories.results]) {
     const dirPath = resolve(cwd, dir);
@@ -163,6 +182,7 @@ export async function initCommand() {
   }
 
   console.log(chalk.green('\nCreated hivetest.config.json'));
+  console.log(chalk.green('Created .env (password saved, gitignored)'));
   console.log(chalk.green(`Created ${config.directories.testPlans}/ and ${config.directories.results}/`));
   console.log(chalk.cyan('\nNext steps:'));
   console.log(`  ${chalk.bold('hivetest generate')}  — Opus explores app & generates test plans`);

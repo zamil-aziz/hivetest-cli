@@ -24,19 +24,16 @@ npm install -g hivetest-cli
 ## Quick Start
 
 ```bash
-# 1. Initialize config and directories
+# 1. Initialize config, directories, and save password to .env
 hivetest init
 
-# 2. Set the test account password
-export HIVETEST_PASSWORD="your-password"
-
-# 3. Generate test plans (Opus 4.6 explores your app)
+# 2. Generate test plans (Opus 4.6 explores your app)
 hivetest generate
 
-# 4. Execute plans in parallel (Sonnet 4.6 runs tests)
+# 3. Execute plans in parallel (Sonnet 4.6 runs tests)
 hivetest run
 
-# 5. View aggregated results
+# 4. View aggregated results
 hivetest report
 ```
 
@@ -49,8 +46,11 @@ Interactive setup that creates `hivetest.config.json` and the `testplans/` and `
 Prompts for:
 - Application name, URL, and description
 - Test account email
+- Test account password
 - Jira project key (optional)
 - MCP servers to import from an existing `.mcp.json`
+
+Saves the password to a `.env` file in the project root (automatically gitignored).
 
 Playwright MCP is added automatically if not already present.
 
@@ -166,13 +166,11 @@ The `maxInstances` value is hardcoded to **4** (2x2 grid layout) and cannot be c
 
 ## Authentication
 
-The test account password is read from the `HIVETEST_PASSWORD` environment variable. It is never written to disk.
+`hivetest init` saves the test account password to a `.env` file in the project root. This file is automatically added to `.gitignore` so the password is never committed.
 
-```bash
-export HIVETEST_PASSWORD="your-password"
-```
+`hivetest run` (and `hivetest generate`) load `.env` automatically — no manual `export` needed.
 
-If the variable is not set, both `generate` and `run` will prompt for the password interactively.
+If `.env` is absent or `HIVETEST_PASSWORD` is not set, both `generate` and `run` will prompt for the password interactively.
 
 ## Project Structure
 
@@ -181,6 +179,7 @@ After running `generate` and `run`, your project will look like:
 ```
 your-project/
   hivetest.config.json    # Config created by init
+  .env                    # Password (gitignored, created by init)
   CLAUDE.md               # Knowledge base created by generate
   testplans/
     01-auth-onboarding.md # Test plans created by generate

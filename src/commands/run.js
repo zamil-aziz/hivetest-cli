@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import inquirer from 'inquirer';
-import { loadConfig, getPassword } from '../lib/config.js';
+import { loadConfig, getPassword, loadDotEnv } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { createInstance } from '../lib/instances.js';
 import { getScreenResolution, calculateWindowLayouts } from '../lib/window-layout.js';
@@ -14,6 +14,8 @@ import { createSession, attachSession, sessionExists, killSession } from '../lib
 export async function runCommand(plans, options) {
   const cwd = process.cwd();
   const config = await loadConfig(cwd);
+
+  await loadDotEnv(cwd);
 
   checkPrerequisites({ needTmux: true });
 
