@@ -59,9 +59,7 @@ export async function loadConfig(dir = process.cwd()) {
     ...config.directories,
   };
 
-  config.maxInstances = (Number.isInteger(config.maxInstances) && config.maxInstances > 0)
-    ? config.maxInstances
-    : 3;
+  config.maxInstances = 4;
   config.symlinks = config.symlinks || [];
 
   return config;

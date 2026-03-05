@@ -70,12 +70,6 @@ export async function initCommand() {
       when: (a) => a.jiraProject,
       default: (a) => `[${a.name}]`,
     },
-    {
-      type: 'number',
-      name: 'maxInstances',
-      message: 'Max parallel instances:',
-      default: 3,
-    },
   ]);
 
   // Build MCP servers config
@@ -140,7 +134,6 @@ export async function initCommand() {
       results: 'results',
     },
     symlinks: ['CLAUDE.md'],
-    maxInstances: answers.maxInstances,
     mcpServers,
   };
 
