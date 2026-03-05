@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { loadConfig } from '../lib/config.js';
 import { findInstanceDirs } from '../lib/instances.js';
-import { killSession, sessionExists } from '../lib/tmux.js';
+import { closeWindows, windowsExist } from '../lib/terminal.js';
 
 export async function cleanCommand(options) {
   const cwd = process.cwd();
@@ -26,11 +26,11 @@ export async function cleanCommand(options) {
     }
   }
 
-  const hasTmux = sessionExists();
+  const hasTerminalWindows = windowsExist();
   const hivetestDir = resolve(cwd, '.hivetest');
   const hasHivetestDir = existsSync(hivetestDir);
 
-  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasTmux && !hasHivetestDir) {
+  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasTerminalWindows && !hasHivetestDir) {
     console.log(chalk.green('Nothing to clean up.'));
     return;
   }
@@ -52,8 +52,8 @@ export async function cleanCommand(options) {
   if (hasHivetestDir) {
     console.log(chalk.gray(`  Local temp: ${hivetestDir}`));
   }
-  if (hasTmux) {
-    console.log(chalk.gray('  tmux session: hivetest'));
+  if (hasTerminalWindows) {
+    console.log(chalk.gray('  Terminal windows: hivetest'));
   }
 
   // Confirm
@@ -72,10 +72,10 @@ export async function cleanCommand(options) {
     }
   }
 
-  // Kill tmux session
-  if (hasTmux) {
-    killSession();
-    console.log(chalk.green('  Killed tmux session'));
+  // Close Terminal windows
+  if (hasTerminalWindows) {
+    closeWindows();
+    console.log(chalk.green('  Closed Terminal windows'));
   }
 
   // Remove instance directories

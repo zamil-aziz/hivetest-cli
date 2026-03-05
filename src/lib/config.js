@@ -59,7 +59,7 @@ export async function loadConfig(dir = process.cwd()) {
     ...config.directories,
   };
 
-  config.maxInstances = 6;
+  config.maxInstances = 4;
   config.symlinks = config.symlinks || [];
 
   return config;

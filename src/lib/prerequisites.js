@@ -18,7 +18,7 @@ function getVersion(cmd, flag = '--version') {
   }
 }
 
-export function checkPrerequisites({ needTmux = false } = {}) {
+export function checkPrerequisites() {
   const issues = [];
 
   if (!commandExists('claude')) {
@@ -27,10 +27,6 @@ export function checkPrerequisites({ needTmux = false } = {}) {
 
   if (!commandExists('node')) {
     issues.push('node not found. Install Node.js >= 18.');
-  }
-
-  if (needTmux && !commandExists('tmux')) {
-    issues.push('tmux not found. Install tmux: brew install tmux');
   }
 
   if (issues.length > 0) {
@@ -44,6 +40,5 @@ export function checkPrerequisites({ needTmux = false } = {}) {
   return {
     claude: getVersion('claude', '--version'),
     node: getVersion('node'),
-    tmux: needTmux ? getVersion('tmux', '-V') : null,
   };
 }

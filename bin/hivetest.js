@@ -26,7 +26,7 @@ program
 
 program
   .command('run')
-  .description('Execute test plans in parallel via tmux + Claude Code')
+  .description('Execute test plans in parallel via Terminal.app + Claude Code')
   .argument('[plans...]', 'Plan numbers to execute (e.g., 05 06 07)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
   .action(runCommand);

@@ -52,7 +52,7 @@ export function getScreenResolution() {
  * Returns [{x, y, width, height}, ...] for each instance.
  */
 export function calculateWindowLayouts(numInstances, screenWidth, screenHeight) {
-  const cols = numInstances <= 3 ? numInstances : 3;
+  const cols = numInstances <= 3 ? numInstances : 2;
   const rows = Math.ceil(numInstances / cols);
 
   const usableHeight = screenHeight - MENU_BAR_HEIGHT;

@@ -9,7 +9,7 @@ import { createInstance } from '../lib/instances.js';
 import { getScreenResolution, calculateWindowLayouts } from '../lib/window-layout.js';
 import { buildExecutePrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
-import { createSession, attachSession, sessionExists, killSession } from '../lib/tmux.js';
+import { openWindows, windowsExist, closeWindows } from '../lib/terminal.js';
 
 export async function runCommand(plans, options) {
   const cwd = process.cwd();
@@ -17,28 +17,23 @@ export async function runCommand(plans, options) {
 
   await loadDotEnv(cwd);
 
-  checkPrerequisites({ needTmux: true });
+  checkPrerequisites();
 
-  // Check for existing tmux session
-  if (sessionExists()) {
+  // Check for existing hivetest Terminal windows
+  if (windowsExist()) {
     const { action } = await inquirer.prompt([
       {
         type: 'list',
         name: 'action',
-        message: 'A hivetest tmux session already exists.',
+        message: 'Hivetest Terminal windows already exist.',
         choices: [
-          { name: 'Kill it and start fresh', value: 'kill' },
-          { name: 'Attach to existing session', value: 'attach' },
+          { name: 'Close and start fresh', value: 'close' },
           { name: 'Cancel', value: 'cancel' },
         ],
       },
     ]);
     if (action === 'cancel') return;
-    if (action === 'attach') {
-      attachSession();
-      return;
-    }
-    killSession();
+    closeWindows();
   }
 
   // Resolve plan files
@@ -99,7 +94,7 @@ export async function runCommand(plans, options) {
     password = pw;
   }
 
-  // Determine number of instances (capped at 6 for 3x2 grid)
+  // Determine number of instances (capped at 4 for 2x2 grid)
   let maxInstances;
   if (options.max !== undefined) {
     maxInstances = parseInt(options.max, 10);
@@ -107,7 +102,7 @@ export async function runCommand(plans, options) {
       console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
       process.exit(1);
     }
-    maxInstances = Math.min(maxInstances, 6);
+    maxInstances = Math.min(maxInstances, 4);
   } else {
     maxInstances = config.maxInstances;
   }
@@ -140,7 +135,7 @@ export async function runCommand(plans, options) {
     const promptFile = resolve(instanceDir, '.hivetest-prompt.txt');
     await writeFile(promptFile, prompt);
 
-    // Build the command string for tmux (reads prompt from file)
+    // Build the command string (reads prompt from file)
     const command = `claude ${claudeArgs.join(' ')} "$(cat .hivetest-prompt.txt)"`;
 
     instances.push({
@@ -152,16 +147,14 @@ export async function runCommand(plans, options) {
 
   spinner.succeed(`Created ${numInstances} instance(s)`);
 
-  // Launch tmux session
-  const tmuxSpinner = ora('Starting tmux session...').start();
-  createSession(instances);
-  tmuxSpinner.succeed('tmux session ready');
+  // Open Terminal.app windows
+  const termSpinner = ora('Opening Terminal windows...').start();
+  openWindows(instances, layouts);
+  termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
 
-  console.log(chalk.green('\nAttaching to tmux session...'));
-  console.log(chalk.gray('Tip: Ctrl+B then D to detach, "hivetest clean" to remove instances'));
-
-  // Attach to tmux
-  attachSession();
+  console.log(chalk.green('\nAll instances launched.'));
+  console.log(chalk.gray('Tip: Cmd+Tab to switch between Terminal and browser windows'));
+  console.log(chalk.gray('"hivetest clean" to close windows and remove instances'));
 }
 
 /**

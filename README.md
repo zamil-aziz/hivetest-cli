@@ -5,7 +5,7 @@ QA Test Orchestrator for Claude Code — generate test plans, execute in paralle
 hivetest automates end-to-end QA testing using a two-phase model:
 
 1. **Generate** — Claude Opus explores your application via browser, maps every section, and writes detailed test plans to disk
-2. **Run** — Claude Sonnet instances execute those plans in parallel via tmux, each with its own browser and isolated working directory
+2. **Run** — Claude Sonnet instances execute those plans in parallel via Terminal.app, each with its own browser and isolated working directory
 
 Results are written incrementally per test case, then aggregated into a summary report.
 
@@ -13,7 +13,7 @@ Results are written incrementally per test case, then aggregated into a summary 
 
 - **Node.js** >= 18
 - **Claude Code CLI** — [installation guide](https://docs.anthropic.com/en/docs/claude-code)
-- **tmux** — required for `hivetest run` (`brew install tmux` on macOS)
+
 
 ## Installation
 
@@ -72,7 +72,7 @@ Usage: hivetest generate
 
 ### `hivetest run [plans...] [--max <n>]`
 
-Executes test plans in parallel using tmux. Each instance gets its own working directory with symlinked config, a dedicated Playwright browser profile, and a tiled browser window.
+Executes test plans in parallel using Terminal.app. Each instance gets its own working directory with symlinked config, a dedicated Playwright browser profile, and a tiled browser window.
 
 ```
 Usage: hivetest run [plans...] [options]
@@ -86,7 +86,7 @@ Options:
 
 Plans are distributed across instances as evenly as possible. For example, `hivetest run 01 02 03 04 --max 2` assigns plans 01+03 to instance 1 and 02+04 to instance 2.
 
-While attached to the tmux session, use `Ctrl+B` then `D` to detach.
+Each instance runs in its own Terminal.app window. Use `Cmd+Tab` to switch between them.
 
 ### `hivetest report [--output <file>] [--json]`
 
@@ -102,7 +102,7 @@ Options:
 
 ### `hivetest clean [--force]`
 
-Removes instance directories, Playwright temp directories, the `.hivetest/` temp directory, and kills any active hivetest tmux session.
+Removes instance directories, Playwright temp directories, the `.hivetest/` temp directory, and closes any hivetest Terminal windows.
 
 ```
 Usage: hivetest clean [options]
@@ -157,7 +157,7 @@ Options:
 | `mcpServers` | Additional MCP server configurations (imported from `.mcp.json`) |
 | `playwright` | Playwright MCP configuration with per-instance user data dirs |
 
-The `maxInstances` value is hardcoded to **6** (3x2 grid layout) and cannot be changed via config.
+The `maxInstances` value is hardcoded to **4** (2x2 grid layout) and cannot be changed via config.
 
 ## Authentication
 
@@ -194,7 +194,7 @@ Each instance directory is a shallow working copy with symlinks to `CLAUDE.md`, 
 
 **Generate phase**: A single Claude Opus session uses the Playwright MCP to control a browser, exploring every section of your application. It writes test plans incrementally to disk — one file per section — so progress survives context compaction or crashes. It also creates `CLAUDE.md` as a persistent knowledge base for the execute phase.
 
-**Run phase**: Multiple Claude Sonnet instances launch in parallel inside tmux panes. Each instance gets assigned a subset of test plans, its own working directory, and a dedicated Playwright browser session. Browser windows are automatically tiled in a 2x2 grid on screen. Each instance reads its assigned test plans, executes test cases via the browser, and writes results to the shared `results/` directory after every test case.
+**Run phase**: Multiple Claude Sonnet instances launch in parallel in separate Terminal.app windows. Each instance gets assigned a subset of test plans, its own working directory, and a dedicated Playwright browser session. Browser windows are automatically tiled in a 2x2 grid on screen. Each instance reads its assigned test plans, executes test cases via the browser, and writes results to the shared `results/` directory after every test case.
 
 **Report phase**: Parses all result files, counts PASS/FAIL/BLOCKED/PENDING per plan, calculates the overall pass rate, and optionally outputs JSON or writes a markdown summary file.
 
