@@ -12,7 +12,7 @@ export async function writePlaywrightConfig(instanceDir, windowLayout) {
         args: [
           `--window-position=${windowLayout.x},${windowLayout.y}`,
           `--window-size=${windowLayout.width},${windowLayout.height}`,
-          '--force-device-scale-factor=0.6',
+          '--force-device-scale-factor=0.45',
         ],
       },
     },

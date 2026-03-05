@@ -157,7 +157,7 @@ Options:
 | `mcpServers` | Additional MCP server configurations (imported from `.mcp.json`) |
 | `playwright` | Playwright MCP configuration with per-instance user data dirs |
 
-The `maxInstances` value is hardcoded to **4** (2x2 grid layout) and cannot be changed via config.
+The `maxInstances` value is hardcoded to **6** (3x2 grid layout) and cannot be changed via config.
 
 ## Authentication
 

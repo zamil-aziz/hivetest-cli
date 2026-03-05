@@ -99,7 +99,7 @@ export async function runCommand(plans, options) {
     password = pw;
   }
 
-  // Determine number of instances (capped at 4 for 2x2 grid)
+  // Determine number of instances (capped at 6 for 3x2 grid)
   let maxInstances;
   if (options.max !== undefined) {
     maxInstances = parseInt(options.max, 10);
@@ -107,7 +107,7 @@ export async function runCommand(plans, options) {
       console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
       process.exit(1);
     }
-    maxInstances = Math.min(maxInstances, 4);
+    maxInstances = Math.min(maxInstances, 6);
   } else {
     maxInstances = config.maxInstances;
   }
