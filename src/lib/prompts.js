@@ -71,11 +71,13 @@ Use these findings in Stage 3 — when writing each section's test cases, add sc
 
 For **each section** in the progress checklist, in order:
 
-1. **Explore** that section thoroughly:
-   - Click every button, link, tab, dropdown, modal, and form
-   - Test with both valid and invalid inputs
-   - Note URL patterns, validation behaviors, field names, error messages
-   - Note any existing bugs or issues you encounter
+1. **Observe** that section (do NOT perform actual testing — that happens later in the run phase):
+   - Navigate to each page/sub-page in the section
+   - Take page snapshots to catalog all UI elements: buttons, forms, fields, tabs, dropdowns, modals
+   - Open dropdowns and modals to see their options (but do NOT submit forms or trigger destructive actions)
+   - Note URL patterns, field names, field types, required indicators, placeholder text
+   - Note any visible validation rules (e.g. "minimum 8 characters" hints)
+   - Identify what actions are available (create, edit, delete, export, filter, sort, etc.)
 2. **Write the test plan file** immediately to \`${config.directories.testPlans}/\`:
    - Filename matches the checklist (e.g., \`01-auth-onboarding.md\`)
    - Include: header, prerequisites, numbered test cases
