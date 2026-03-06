@@ -66,6 +66,32 @@ export async function initCommand() {
     },
   ]);
 
+  // Optional database connection
+  const { connectDb } = await inquirer.prompt([{
+    type: 'confirm',
+    name: 'connectDb',
+    message: 'Connect a PostgreSQL database? (optional)',
+    default: false,
+  }]);
+
+  let database = null;
+  if (connectDb) {
+    const { dsn } = await inquirer.prompt([{
+      type: 'input',
+      name: 'dsn',
+      message: 'PostgreSQL connection string:',
+      validate: (v) => v.startsWith('postgresql://') || v.startsWith('postgres://') || 'Must be a PostgreSQL connection string',
+    }]);
+
+    const sourceId = answers.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-db';
+
+    // Write dbhub.toml
+    const toml = `[[sources]]\nid = "${sourceId}"\ndsn = "${dsn}"\n\n[[tools]]\nname = "execute_sql"\nsource = "${sourceId}"\nreadonly = true\n`;
+    await writeFile(resolve(cwd, 'dbhub.toml'), toml);
+
+    database = { sourceId, tomlFile: 'dbhub.toml' };
+  }
+
   // Build MCP servers config
   let mcpServers = {};
   if (existingMcp?.mcpServers) {
@@ -135,6 +161,10 @@ export async function initCommand() {
     config.playwright = playwright;
   }
 
+  if (database) {
+    config.database = database;
+  }
+
   // Write config
   await writeFile(
     getConfigPath(cwd),
@@ -150,8 +180,11 @@ export async function initCommand() {
   if (existsSync(gitignorePath)) {
     gitignoreContent = await readFile(gitignorePath, 'utf-8');
   }
-  if (!gitignoreContent.split('\n').some((line) => line.trim() === '.env')) {
-    await appendFile(gitignorePath, '\n.env\n');
+  for (const entry of ['.env', 'dbhub.toml']) {
+    if (!gitignoreContent.split('\n').some((line) => line.trim() === entry)) {
+      await appendFile(gitignorePath, `\n${entry}\n`);
+      gitignoreContent += `\n${entry}\n`;
+    }
   }
 
   // Create directories
@@ -164,6 +197,9 @@ export async function initCommand() {
 
   console.log(chalk.green('\nCreated hivetest.config.json'));
   console.log(chalk.green('Created .env (password saved, gitignored)'));
+  if (database) {
+    console.log(chalk.green('Created dbhub.toml (database config, gitignored)'));
+  }
   console.log(chalk.green(`Created ${config.directories.testPlans}/ and ${config.directories.results}/`));
   console.log(chalk.cyan('\nNext steps:'));
   console.log(`  ${chalk.bold('hivetest generate')}  — Opus explores app & generates test plans`);

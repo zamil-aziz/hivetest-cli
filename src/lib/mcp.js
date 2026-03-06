@@ -27,8 +27,17 @@ export async function writePlaywrightConfig(instanceDir, windowLayout, userDataD
  * Generate a .mcp.json for an instance directory.
  * Copies all base mcpServers and adds Playwright with a unique user-data-dir.
  */
-export function buildMcpConfig(config, instanceIndex, playwrightConfigPath) {
+export function buildMcpConfig(config, instanceIndex, playwrightConfigPath, projectDir) {
   const mcpServers = { ...config.mcpServers };
+
+  // Add database MCP server if configured
+  if (config.database && projectDir) {
+    const tomlPath = resolve(projectDir, config.database.tomlFile);
+    mcpServers[config.database.sourceId] = {
+      command: 'npx',
+      args: ['-y', '@bytebase/dbhub', '--config', tomlPath],
+    };
+  }
 
   // Add Playwright with unique user-data-dir per instance
   if (config.playwright) {
@@ -54,7 +63,7 @@ export function buildMcpConfig(config, instanceIndex, playwrightConfigPath) {
   return { mcpServers };
 }
 
-export async function writeMcpConfig(instanceDir, config, instanceIndex, windowLayout) {
+export async function writeMcpConfig(instanceDir, config, instanceIndex, windowLayout, projectDir) {
   let playwrightConfigPath;
   if (windowLayout) {
     const userDataDir = config.playwright
@@ -63,7 +72,7 @@ export async function writeMcpConfig(instanceDir, config, instanceIndex, windowL
     playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir);
   }
 
-  const mcpConfig = buildMcpConfig(config, instanceIndex, playwrightConfigPath);
+  const mcpConfig = buildMcpConfig(config, instanceIndex, playwrightConfigPath, projectDir || instanceDir);
   const mcpPath = resolve(instanceDir, '.mcp.json');
   await writeFile(mcpPath, JSON.stringify(mcpConfig, null, 2) + '\n');
   return mcpPath;

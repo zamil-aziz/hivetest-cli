@@ -46,7 +46,7 @@ export async function generateCommand() {
     mcpBackup = await readFile(mcpPath, 'utf-8');
   }
 
-  await writeMcpConfig(cwd, config, 0);
+  await writeMcpConfig(cwd, config, 0, undefined, cwd);
 
   try {
     // Build args and spawn directly — no shell, no file

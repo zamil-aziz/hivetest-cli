@@ -60,7 +60,7 @@ export async function createInstance(projectDir, config, index, windowLayout) {
   }
 
   // Write .mcp.json
-  await writeMcpConfig(instanceDir, config, index, windowLayout);
+  await writeMcpConfig(instanceDir, config, index, windowLayout, projectDir);
 
   return instanceDir;
 }
