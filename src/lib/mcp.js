@@ -9,6 +9,7 @@ export async function writePlaywrightConfig(instanceDir, windowLayout) {
   const config = {
     browser: {
       launchOptions: {
+        headless: false,
         args: [
           `--window-position=${windowLayout.x},${windowLayout.y}`,
           `--window-size=${windowLayout.width},${windowLayout.height}`,

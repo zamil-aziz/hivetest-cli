@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { loadConfig } from '../lib/config.js';
 import { findInstanceDirs } from '../lib/instances.js';
-import { closeWindows, windowsExist } from '../lib/terminal.js';
+import { closeWindows } from '../lib/terminal.js';
 
 export async function cleanCommand(options) {
   const cwd = process.cwd();
@@ -26,11 +26,10 @@ export async function cleanCommand(options) {
     }
   }
 
-  const hasTerminalWindows = windowsExist();
   const hivetestDir = resolve(cwd, '.hivetest');
   const hasHivetestDir = existsSync(hivetestDir);
 
-  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasTerminalWindows && !hasHivetestDir) {
+  if (instanceDirs.length === 0 && playwrightTmpDirs.length === 0 && !hasHivetestDir) {
     console.log(chalk.green('Nothing to clean up.'));
     return;
   }
@@ -52,10 +51,6 @@ export async function cleanCommand(options) {
   if (hasHivetestDir) {
     console.log(chalk.gray(`  Local temp: ${hivetestDir}`));
   }
-  if (hasTerminalWindows) {
-    console.log(chalk.gray('  Terminal windows: hivetest'));
-  }
-
   // Confirm
   if (!options.force) {
     const { confirm } = await inquirer.prompt([
@@ -72,11 +67,8 @@ export async function cleanCommand(options) {
     }
   }
 
-  // Close Terminal windows
-  if (hasTerminalWindows) {
-    closeWindows();
-    console.log(chalk.green('  Closed Terminal windows'));
-  }
+  // Kill browser processes and close Terminal windows
+  closeWindows(config.playwright?.userDataDirPrefix);
 
   // Remove instance directories
   for (const dir of instanceDirs) {

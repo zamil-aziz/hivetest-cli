@@ -56,7 +56,16 @@ export function windowsExist() {
  * Close all hivetest Terminal.app windows.
  * First kills processes on those TTYs, then closes the windows.
  */
-export function closeWindows() {
+export function closeWindows(userDataDirPrefix) {
+  // Kill browser/Playwright processes matching hivetest's user-data-dir
+  if (userDataDirPrefix) {
+    try {
+      execSync(`pkill -f ${shellQuote(userDataDirPrefix)}`, { stdio: 'ignore' });
+    } catch {
+      // No matching processes
+    }
+  }
+
   if (!isTerminalRunning()) return;
   try {
     // Get TTYs of hivetest windows and kill process groups
@@ -79,9 +88,9 @@ export function closeWindows() {
       for (const tty of ttyList.split(',')) {
         const trimmed = tty.trim();
         if (trimmed) {
+          const ttyName = trimmed.replace('/dev/', '');
           try {
-            // Kill all processes on this TTY
-            execSync(`pkill -t ${trimmed.replace('/dev/', '')}`, { stdio: 'ignore' });
+            execSync(`pkill -t ${ttyName}`, { stdio: 'ignore' });
           } catch {
             // Process may already be gone
           }
@@ -89,8 +98,22 @@ export function closeWindows() {
       }
     }
 
-    // Brief delay to let processes exit
+    // Brief delay to let processes exit, then SIGKILL any survivors
     execSync('sleep 0.5', { stdio: 'ignore' });
+
+    if (ttyList) {
+      for (const tty of ttyList.split(',')) {
+        const trimmed = tty.trim();
+        if (trimmed) {
+          const ttyName = trimmed.replace('/dev/', '');
+          try {
+            execSync(`pkill -9 -t ${ttyName}`, { stdio: 'ignore' });
+          } catch {
+            // Process may already be gone
+          }
+        }
+      }
+    }
 
     // Close the Terminal windows by title
     runAppleScript(`

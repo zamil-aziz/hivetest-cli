@@ -33,7 +33,7 @@ export async function runCommand(plans, options) {
       },
     ]);
     if (action === 'cancel') return;
-    closeWindows();
+    closeWindows(config.playwright?.userDataDirPrefix);
   }
 
   // Resolve plan files

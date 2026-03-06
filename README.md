@@ -14,7 +14,6 @@ Results are written incrementally per test case, then aggregated into a summary 
 - **Node.js** >= 18
 - **Claude Code CLI** — [installation guide](https://docs.anthropic.com/en/docs/claude-code)
 
-
 ## Installation
 
 ```bash
