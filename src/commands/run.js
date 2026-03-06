@@ -1,4 +1,4 @@
-import { readdir, writeFile } from 'fs/promises';
+import { mkdir, readdir, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -149,8 +149,14 @@ export async function runCommand(plans, options) {
 
   // Open Terminal.app windows
   const termSpinner = ora('Opening Terminal windows...').start();
-  openWindows(instances, layouts);
+  const { ttys, windowIds } = openWindows(instances, layouts);
   termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
+
+  // Save TTYs and window IDs for cleanup (titles get overwritten by Claude CLI)
+  const hivetestDir = resolve(cwd, '.hivetest');
+  await mkdir(hivetestDir, { recursive: true });
+  await writeFile(resolve(hivetestDir, 'ttys.json'), JSON.stringify(ttys));
+  await writeFile(resolve(hivetestDir, 'windowIds.json'), JSON.stringify(windowIds));
 
   console.log(chalk.green('\nAll instances launched.'));
   console.log(chalk.gray('Tip: Cmd+Tab to switch between Terminal and browser windows'));

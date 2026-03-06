@@ -56,7 +56,7 @@ export function windowsExist() {
  * Close all hivetest Terminal.app windows.
  * First kills processes on those TTYs, then closes the windows.
  */
-export function closeWindows(userDataDirPrefix) {
+export function closeWindows(userDataDirPrefix, fallbackTtys = [], fallbackWindowIds = []) {
   // Kill browser/Playwright processes matching hivetest's user-data-dir
   if (userDataDirPrefix) {
     try {
@@ -68,8 +68,55 @@ export function closeWindows(userDataDirPrefix) {
 
   if (!isTerminalRunning()) return;
   try {
-    // Get TTYs of hivetest windows and kill process groups
-    const ttyList = runAppleScript(`
+    // Get TTYs of hivetest windows by title
+    let ttys = getTtysByTitle();
+    if (ttys.length === 0) ttys = fallbackTtys;
+    if (ttys.length === 0) return;
+
+    // Collect window IDs BEFORE killing processes (TTYs are still valid)
+    let windowIds = getWindowIdsByTty(ttys);
+    if (windowIds.length === 0) windowIds = fallbackWindowIds;
+
+    // Kill processes on TTYs (SIGTERM)
+    for (const tty of ttys) {
+      const ttyName = tty.replace('/dev/', '');
+      try {
+        execSync(`pkill -t ${ttyName}`, { stdio: 'ignore' });
+      } catch {
+        // Process may already be gone
+      }
+    }
+
+    // Brief delay to let processes exit, then SIGKILL any survivors by PID
+    // (ps -t catches processes like caffeinate that pkill -t misses)
+    execSync('sleep 0.5', { stdio: 'ignore' });
+
+    for (const tty of ttys) {
+      const ttyName = tty.replace('/dev/', '');
+      try {
+        const pids = execSync(`ps -t ${ttyName} -o pid=`, { encoding: 'utf-8' }).trim();
+        for (const pid of pids.split('\n').map(p => p.trim()).filter(Boolean)) {
+          try { execSync(`kill -9 ${pid}`, { stdio: 'ignore' }); } catch {}
+        }
+      } catch {}
+    }
+
+    // Wait for killed processes to be fully reaped
+    execSync('sleep 1', { stdio: 'ignore' });
+
+    // Close windows by saved IDs (stable after process death)
+    closeWindowsById(windowIds);
+  } catch {
+    // Best effort cleanup
+  }
+}
+
+/**
+ * Get TTYs of Terminal tabs with hivetest custom titles.
+ */
+function getTtysByTitle() {
+  try {
+    const result = runAppleScript(`
       tell application "Terminal"
         set ttyList to {}
         repeat with w in windows
@@ -83,57 +130,9 @@ export function closeWindows(userDataDirPrefix) {
         return ttyList as text
       end tell
     `);
-
-    if (ttyList) {
-      for (const tty of ttyList.split(',')) {
-        const trimmed = tty.trim();
-        if (trimmed) {
-          const ttyName = trimmed.replace('/dev/', '');
-          try {
-            execSync(`pkill -t ${ttyName}`, { stdio: 'ignore' });
-          } catch {
-            // Process may already be gone
-          }
-        }
-      }
-    }
-
-    // Brief delay to let processes exit, then SIGKILL any survivors
-    execSync('sleep 0.5', { stdio: 'ignore' });
-
-    if (ttyList) {
-      for (const tty of ttyList.split(',')) {
-        const trimmed = tty.trim();
-        if (trimmed) {
-          const ttyName = trimmed.replace('/dev/', '');
-          try {
-            execSync(`pkill -9 -t ${ttyName}`, { stdio: 'ignore' });
-          } catch {
-            // Process may already be gone
-          }
-        }
-      }
-    }
-
-    // Close the Terminal windows by title
-    runAppleScript(`
-      tell application "Terminal"
-        set windowsToClose to {}
-        repeat with w in windows
-          repeat with t in tabs of w
-            if custom title of t starts with "hivetest-" then
-              set end of windowsToClose to w
-              exit repeat
-            end if
-          end repeat
-        end repeat
-        repeat with w in windowsToClose
-          close w
-        end repeat
-      end tell
-    `);
+    return result ? result.split(',').map(t => t.trim()).filter(Boolean) : [];
   } catch {
-    // Best effort cleanup
+    return [];
   }
 }
 
@@ -143,7 +142,7 @@ export function closeWindows(userDataDirPrefix) {
  * layouts is an array of { x, y, width, height }.
  */
 export function openWindows(instances, layouts) {
-  const scriptParts = ['tell application "Terminal"', '  activate'];
+  const scriptParts = ['tell application "Terminal"', '  activate', '  set ttyList to {}', '  set widList to {}'];
 
   for (let i = 0; i < instances.length; i++) {
     const inst = instances[i];
@@ -169,10 +168,73 @@ export function openWindows(instances, layouts) {
     scriptParts.push(`  set custom title of newTab to "hivetest-${i + 1}"`);
     scriptParts.push(`  set title displays custom title of newTab to true`);
     scriptParts.push(`  set bounds of window 1 to {${left}, ${top}, ${right}, ${bottom}}`);
+    scriptParts.push(`  set end of ttyList to tty of newTab`);
+    scriptParts.push(`  set end of widList to id of window 1`);
   }
 
+  scriptParts.push('  set AppleScript\'s text item delimiters to ","');
+  scriptParts.push('  return (ttyList as text) & "|" & (widList as text)');
   scriptParts.push('end tell');
-  runAppleScript(scriptParts.join('\n'));
+  const result = runAppleScript(scriptParts.join('\n'));
+  if (!result) return { ttys: [], windowIds: [] };
+  const [ttyPart, widPart] = result.split('|');
+  const ttys = ttyPart ? ttyPart.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const windowIds = widPart ? widPart.split(',').map(id => parseInt(id.trim(), 10)).filter(n => !isNaN(n)) : [];
+  return { ttys, windowIds };
+}
+
+/**
+ * Get Terminal window IDs matching the given TTYs (must be called while processes are alive).
+ */
+function getWindowIdsByTty(ttys) {
+  if (ttys.length === 0) return [];
+  const ttyListLiteral = ttys.map(t => `"${t}"`).join(', ');
+  try {
+    const result = runAppleScript(`
+      tell application "Terminal"
+        set targetTtys to {${ttyListLiteral}}
+        set widList to {}
+        repeat with w in windows
+          repeat with t in tabs of w
+            if tty of t is in targetTtys then
+              set end of widList to id of w
+              exit repeat
+            end if
+          end repeat
+        end repeat
+        set AppleScript's text item delimiters to ","
+        return widList as text
+      end tell
+    `);
+    return result ? result.split(',').map(id => parseInt(id.trim(), 10)).filter(n => !isNaN(n)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Close Terminal windows by their stable integer IDs.
+ */
+function closeWindowsById(windowIds) {
+  if (windowIds.length === 0) return;
+  // Deduplicate IDs
+  const uniqueIds = [...new Set(windowIds)];
+  for (const wid of uniqueIds) {
+    try {
+      runAppleScript(`
+        tell application "Terminal"
+          repeat with w in windows
+            if id of w is ${wid} then
+              close w
+              exit repeat
+            end if
+          end repeat
+        end tell
+      `);
+    } catch {
+      // Window may already be closed
+    }
+  }
 }
 
 /**

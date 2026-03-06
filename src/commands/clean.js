@@ -1,5 +1,5 @@
 import { rm } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -67,8 +67,20 @@ export async function cleanCommand(options) {
     }
   }
 
+  // Read stored TTYs and window IDs (titles may have been overwritten by Claude CLI)
+  let fallbackTtys = [];
+  let fallbackWindowIds = [];
+  const ttysFile = resolve(cwd, '.hivetest', 'ttys.json');
+  const windowIdsFile = resolve(cwd, '.hivetest', 'windowIds.json');
+  if (existsSync(ttysFile)) {
+    try { fallbackTtys = JSON.parse(readFileSync(ttysFile, 'utf-8')); } catch {}
+  }
+  if (existsSync(windowIdsFile)) {
+    try { fallbackWindowIds = JSON.parse(readFileSync(windowIdsFile, 'utf-8')); } catch {}
+  }
+
   // Kill browser processes and close Terminal windows
-  closeWindows(config.playwright?.userDataDirPrefix);
+  closeWindows(config.playwright?.userDataDirPrefix, fallbackTtys, fallbackWindowIds);
 
   // Remove instance directories
   for (const dir of instanceDirs) {
