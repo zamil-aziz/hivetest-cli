@@ -5,15 +5,15 @@ import { resolve } from 'path';
  * Write a Playwright MCP config file with browser launch options for window positioning.
  * Returns the path to the config file.
  */
-export async function writePlaywrightConfig(instanceDir, windowLayout) {
+export async function writePlaywrightConfig(instanceDir, windowLayout, userDataDir) {
   const config = {
     browser: {
+      ...(userDataDir && { userDataDir }),
       launchOptions: {
         headless: false,
         args: [
           `--window-position=${windowLayout.x},${windowLayout.y}`,
           `--window-size=${windowLayout.width},${windowLayout.height}`,
-          '--force-device-scale-factor=0.45',
         ],
       },
     },
@@ -32,17 +32,17 @@ export function buildMcpConfig(config, instanceIndex, playwrightConfigPath) {
 
   // Add Playwright with unique user-data-dir per instance
   if (config.playwright) {
-    const userDataDir = `${config.playwright.userDataDirPrefix}-${instanceIndex}`;
     const playwrightArgs = [...config.playwright.args];
 
-    // Add --user-data-dir if not already present
-    if (!playwrightArgs.some((a) => a.includes('user-data-dir'))) {
-      playwrightArgs.push(`--user-data-dir=${userDataDir}`);
-    }
-
-    // Add --config for window layout if provided
+    // If config file is used, it contains userDataDir — only add --config flag.
+    // Otherwise fall back to CLI --user-data-dir flag.
     if (playwrightConfigPath) {
       playwrightArgs.push(`--config=${playwrightConfigPath}`);
+    } else {
+      const userDataDir = `${config.playwright.userDataDirPrefix}-${instanceIndex}`;
+      if (!playwrightArgs.some((a) => a.includes('user-data-dir'))) {
+        playwrightArgs.push(`--user-data-dir=${userDataDir}`);
+      }
     }
 
     mcpServers.playwright = {
@@ -57,7 +57,10 @@ export function buildMcpConfig(config, instanceIndex, playwrightConfigPath) {
 export async function writeMcpConfig(instanceDir, config, instanceIndex, windowLayout) {
   let playwrightConfigPath;
   if (windowLayout) {
-    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout);
+    const userDataDir = config.playwright
+      ? `${config.playwright.userDataDirPrefix}-${instanceIndex}`
+      : undefined;
+    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir);
   }
 
   const mcpConfig = buildMcpConfig(config, instanceIndex, playwrightConfigPath);

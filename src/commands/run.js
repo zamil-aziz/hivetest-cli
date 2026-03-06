@@ -1,4 +1,5 @@
-import { mkdir, readdir, writeFile } from 'fs/promises';
+import { mkdir, readdir, writeFile, rm } from 'fs/promises';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -122,6 +123,16 @@ export async function runCommand(plans, options) {
 
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });
+
+  // Clean stale Playwright user data dirs to prevent lock file conflicts
+  if (config.playwright?.userDataDirPrefix) {
+    for (let i = 1; i <= numInstances; i++) {
+      const dir = `${config.playwright.userDataDirPrefix}-${i}`;
+      if (existsSync(dir)) {
+        await rm(dir, { recursive: true, force: true });
+      }
+    }
+  }
 
   // Create instances
   const spinner = ora('Creating instance directories...').start();

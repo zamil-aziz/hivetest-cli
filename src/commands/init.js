@@ -92,7 +92,7 @@ export async function initCommand() {
   if (!hasPlaywright) {
     playwright = {
       command: 'npx',
-      args: ['-y', '@playwright/mcp'],
+      args: ['-y', '@playwright/mcp@0.0.68'],
       userDataDirPrefix: '/tmp/hivetest-playwright',
     };
     console.log(chalk.cyan('Added Playwright MCP for browser automation.'));
