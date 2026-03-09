@@ -43,6 +43,7 @@ program
   .command('test')
   .description('Verify Jira ticket fixes via browser testing')
   .argument('<tickets...>', 'Jira ticket numbers (e.g., 1131 1139)')
+  .option('--max <n>', 'Max parallel instances (overrides config)')
   .action(testCommand);
 
 program

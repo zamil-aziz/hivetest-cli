@@ -12,7 +12,7 @@ import { buildTestPrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
 import { openWindows, windowsExist, closeWindows } from '../lib/terminal.js';
 
-export async function testCommand(tickets) {
+export async function testCommand(tickets, options) {
   const cwd = process.cwd();
   const config = await loadConfig(cwd);
 
@@ -79,40 +79,73 @@ export async function testCommand(tickets) {
     password = pw;
   }
 
-  // Single window layout
-  const { width: screenWidth, height: screenHeight } = getScreenResolution();
-  const layouts = calculateWindowLayouts(1, screenWidth, screenHeight);
+  // Determine number of instances (capped at 4 for 2x2 grid)
+  let maxInstances;
+  if (options.max !== undefined) {
+    maxInstances = parseInt(options.max, 10);
+    if (!Number.isInteger(maxInstances) || maxInstances < 1) {
+      console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
+      process.exit(1);
+    }
+    maxInstances = Math.min(maxInstances, 4);
+  } else {
+    maxInstances = config.maxInstances;
+  }
+  const numInstances = Math.min(maxInstances, ticketIds.length);
 
-  // Clean stale Playwright user data dir for index 1
+  // Distribute tickets across instances
+  const ticketAssignments = distributeTickets(ticketIds, numInstances);
+
+  console.log(chalk.cyan(`\nLaunching ${numInstances} instance(s):`));
+  for (let i = 0; i < ticketAssignments.length; i++) {
+    console.log(chalk.gray(`  Instance ${i + 1}: ${ticketAssignments[i].join(', ')}`));
+  }
+
+  // Calculate window layouts for tiling browser windows
+  const { width: screenWidth, height: screenHeight } = getScreenResolution();
+  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+
+  // Build claude args (shared across instances)
+  const claudeArgs = buildClaudeArgs({ model: config.models.execute });
+
+  // Clean stale Playwright user data dirs to prevent lock file conflicts
   if (config.playwright?.userDataDirPrefix) {
-    const dir = `${config.playwright.userDataDirPrefix}-1`;
-    if (existsSync(dir)) {
-      await rm(dir, { recursive: true, force: true });
+    for (let i = 1; i <= numInstances; i++) {
+      const dir = `${config.playwright.userDataDirPrefix}-${i}`;
+      if (existsSync(dir)) {
+        await rm(dir, { recursive: true, force: true });
+      }
     }
   }
 
-  // Create instance
-  const spinner = ora('Creating instance directory...').start();
-  const instanceDir = await createInstance(cwd, config, 1, layouts[0]);
-  const prompt = buildTestPrompt(config, ticketIds);
+  // Create instances
+  const spinner = ora('Creating instance directories...').start();
+  const instances = [];
 
-  // Write prompt file
-  const promptFile = resolve(instanceDir, '.hivetest-prompt.txt');
-  await writeFile(promptFile, prompt);
+  for (let i = 0; i < numInstances; i++) {
+    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i]);
+    const prompt = buildTestPrompt(config, ticketAssignments[i]);
 
-  // Build claude command
-  const claudeArgs = buildClaudeArgs({ model: config.models.execute });
-  const command = `claude ${claudeArgs.join(' ')} "$(cat .hivetest-prompt.txt)"`;
+    // Write prompt to a file in the instance directory
+    const promptFile = resolve(instanceDir, '.hivetest-prompt.txt');
+    await writeFile(promptFile, prompt);
 
-  spinner.succeed('Created instance directory');
+    // Build the command string (reads prompt from file)
+    const command = `claude ${claudeArgs.join(' ')} "$(cat .hivetest-prompt.txt)"`;
 
-  // Open Terminal window
-  const termSpinner = ora('Opening Terminal window...').start();
-  const { ttys, windowIds } = openWindows(
-    [{ dir: instanceDir, command, env: { HIVETEST_PASSWORD: password } }],
-    layouts
-  );
-  termSpinner.succeed('Opened Terminal window');
+    instances.push({
+      dir: instanceDir,
+      command,
+      env: { HIVETEST_PASSWORD: password },
+    });
+  }
+
+  spinner.succeed(`Created ${numInstances} instance(s)`);
+
+  // Open Terminal.app windows
+  const termSpinner = ora('Opening Terminal windows...').start();
+  const { ttys, windowIds } = openWindows(instances, layouts);
+  termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
 
   // Save TTYs and window IDs for cleanup
   const hivetestDir = resolve(cwd, '.hivetest');
@@ -120,8 +153,20 @@ export async function testCommand(tickets) {
   await writeFile(resolve(hivetestDir, 'ttys.json'), JSON.stringify(ttys));
   await writeFile(resolve(hivetestDir, 'windowIds.json'), JSON.stringify(windowIds));
 
-  console.log(chalk.green('\nRetest instance launched.'));
+  console.log(chalk.green('\nAll instances launched.'));
   console.log(chalk.gray(`Testing: ${ticketIds.join(', ')}`));
   console.log(chalk.gray('Results will be written to results/retest-{TICKET}.md'));
   console.log(chalk.gray('"hivetest clean" to close windows and remove instances'));
+}
+
+/**
+ * Distribute tickets across N instances as evenly as possible.
+ * Returns array of arrays.
+ */
+function distributeTickets(tickets, numInstances) {
+  const assignments = Array.from({ length: numInstances }, () => []);
+  for (let i = 0; i < tickets.length; i++) {
+    assignments[i % numInstances].push(tickets[i]);
+  }
+  return assignments;
 }
