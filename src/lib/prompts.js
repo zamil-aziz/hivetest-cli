@@ -176,75 +176,42 @@ Start by reading the first test plan and logging into the application.`;
 export function buildTestPrompt(config, ticketIds) {
   const ticketList = ticketIds.map((id) => `- ${id}`).join('\n');
 
-  return `You are a QA tester verifying bug fixes for "${config.name}".
+  return `You are a QA tester. These tickets have been returned from development and are ready for verification testing.
 
 ## Application
 - **URL**: ${config.url}
 - **Test account**: ${config.auth.email}
 - **Password**: Read from the HIVETEST_PASSWORD environment variable (run: echo $HIVETEST_PASSWORD in bash)
 
-## Jira Tickets to Retest
+## Tickets to Verify
 ${ticketList}
 
-## Instructions
+## For each ticket:
 
-For each ticket above, perform the following steps in order:
-
-### 1. Read the Jira Ticket
-Use the Jira MCP tool to read the ticket. Gather:
-- Summary and description
-- Steps to reproduce the original bug
-- Comments (especially developer notes about the fix)
-- Acceptance criteria if present
-
-### 2. Log In and Reproduce the Scenario
-- Navigate to ${config.url} and log in with the test account
-- Follow the steps to reproduce the original bug scenario
-- Verify the fix works — the bug should no longer occur
-
-### 3. Smoke Test Adjacent Features
-- Quick check that related/adjacent features still work correctly
-- Verify no obvious regressions were introduced by the fix
-
-### 4. Write Results File
-Write results to \`results/retest-{TICKET_ID}.md\` immediately after testing each ticket.
-
-Format:
+1. **Read the ticket** via Jira MCP — get the bug description, reproduction steps, return comments, and developer comments
+2. **Log in** to ${config.url} and verify the fix works
+3. **Quick smoke test** adjacent features for regressions
+4. **Write results** to \`results/retest-{TICKET_ID}.md\`:
 \`\`\`markdown
 # Retest: {TICKET_ID}
-**Run date**: ${new Date().toISOString().split('T')[0]}
-**Tester**: ${config.auth.email}
+**Date**: ${new Date().toISOString().split('T')[0]}
 
-## Original Bug
-[Summary from the Jira ticket]
+## Bug Summary
+[From ticket]
 
-## Verification Steps
+## Verification
 | # | Step | Expected | Actual | Status |
 |---|------|----------|--------|--------|
-| 1 | ... | ... | ... | PASS/FAIL |
 
 ## Verdict: PASS / FAIL
-
-## Notes
-- [Any observations, edge cases found, or regression concerns]
 \`\`\`
+5. **If all tests PASS**: Add a verification comment on the Jira ticket and move it to Done
+6. **If any test FAILS**: Write the results file but **ASK ME before posting a comment** on the ticket — do not comment automatically on failures
 
-### 5. Comment on the Jira Ticket
-Use the Jira MCP tool to add a comment on the ticket with:
-- The verdict (PASS or FAIL)
-- A brief summary of what was tested
-- Any notes or concerns
+## Rules
+- Use fake test data (e.g. "Test User Alpha", +1-555-01XX, test@example.com)
+- Write results immediately after each ticket
+- If the bug is already fixed / can't be reproduced, that's a PASS
 
-### 6. Move to Next Ticket
-Repeat from step 1 for the next ticket.
-
-## Important Rules
-- Use clearly fake test data (names like "Test Patient Alpha")
-- Never use real phone numbers — use +1-555-01XX format
-- Never use real emails — use testXXX@example.com format
-- Write the results file IMMEDIATELY after each ticket — do not batch
-- If the original bug cannot be reproduced (already fixed), that counts as PASS
-- If you discover a new bug during smoke testing, note it in the results file
-
-Start by reading the first Jira ticket.`;
+Start by reading the first ticket.`;
 }
