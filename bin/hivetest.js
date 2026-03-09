@@ -6,6 +6,7 @@ import { generateCommand } from '../src/commands/generate.js';
 import { runCommand } from '../src/commands/run.js';
 import { reportCommand } from '../src/commands/report.js';
 import { cleanCommand } from '../src/commands/clean.js';
+import { testCommand } from '../src/commands/test.js';
 
 const program = new Command();
 
@@ -37,6 +38,12 @@ program
   .option('--output <file>', 'Write summary to file')
   .option('--json', 'Output as JSON')
   .action(reportCommand);
+
+program
+  .command('test')
+  .description('Verify Jira ticket fixes via browser testing')
+  .argument('<tickets...>', 'Jira ticket numbers (e.g., 1131 1139)')
+  .action(testCommand);
 
 program
   .command('clean')

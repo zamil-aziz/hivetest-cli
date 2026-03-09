@@ -169,3 +169,82 @@ Execute each test plan sequentially. For each test plan file:
 
 Start by reading the first test plan and logging into the application.`;
 }
+
+/**
+ * Build the prompt for the test/retest phase (Sonnet verifies Jira ticket fixes).
+ */
+export function buildTestPrompt(config, ticketIds) {
+  const ticketList = ticketIds.map((id) => `- ${id}`).join('\n');
+
+  return `You are a QA tester verifying bug fixes for "${config.name}".
+
+## Application
+- **URL**: ${config.url}
+- **Test account**: ${config.auth.email}
+- **Password**: Read from the HIVETEST_PASSWORD environment variable (run: echo $HIVETEST_PASSWORD in bash)
+
+## Jira Tickets to Retest
+${ticketList}
+
+## Instructions
+
+For each ticket above, perform the following steps in order:
+
+### 1. Read the Jira Ticket
+Use the Jira MCP tool to read the ticket. Gather:
+- Summary and description
+- Steps to reproduce the original bug
+- Comments (especially developer notes about the fix)
+- Acceptance criteria if present
+
+### 2. Log In and Reproduce the Scenario
+- Navigate to ${config.url} and log in with the test account
+- Follow the steps to reproduce the original bug scenario
+- Verify the fix works — the bug should no longer occur
+
+### 3. Smoke Test Adjacent Features
+- Quick check that related/adjacent features still work correctly
+- Verify no obvious regressions were introduced by the fix
+
+### 4. Write Results File
+Write results to \`results/retest-{TICKET_ID}.md\` immediately after testing each ticket.
+
+Format:
+\`\`\`markdown
+# Retest: {TICKET_ID}
+**Run date**: ${new Date().toISOString().split('T')[0]}
+**Tester**: ${config.auth.email}
+
+## Original Bug
+[Summary from the Jira ticket]
+
+## Verification Steps
+| # | Step | Expected | Actual | Status |
+|---|------|----------|--------|--------|
+| 1 | ... | ... | ... | PASS/FAIL |
+
+## Verdict: PASS / FAIL
+
+## Notes
+- [Any observations, edge cases found, or regression concerns]
+\`\`\`
+
+### 5. Comment on the Jira Ticket
+Use the Jira MCP tool to add a comment on the ticket with:
+- The verdict (PASS or FAIL)
+- A brief summary of what was tested
+- Any notes or concerns
+
+### 6. Move to Next Ticket
+Repeat from step 1 for the next ticket.
+
+## Important Rules
+- Use clearly fake test data (names like "Test Patient Alpha")
+- Never use real phone numbers — use +1-555-01XX format
+- Never use real emails — use testXXX@example.com format
+- Write the results file IMMEDIATELY after each ticket — do not batch
+- If the original bug cannot be reproduced (already fixed), that counts as PASS
+- If you discover a new bug during smoke testing, note it in the results file
+
+Start by reading the first Jira ticket.`;
+}
