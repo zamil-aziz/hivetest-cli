@@ -20,8 +20,8 @@ export async function runCommand(plans, options) {
 
   checkPrerequisites();
 
-  // Check for existing hivetest Terminal windows
-  if (windowsExist()) {
+  // Check for existing hivetest run Terminal windows
+  if (windowsExist('run')) {
     const { action } = await inquirer.prompt([
       {
         type: 'list',
@@ -34,7 +34,7 @@ export async function runCommand(plans, options) {
       },
     ]);
     if (action === 'cancel') return;
-    closeWindows(config.playwright?.userDataDirPrefix);
+    closeWindows(config.playwright?.userDataDirPrefix, [], [], 'run');
   }
 
   // Resolve plan files
@@ -139,7 +139,7 @@ export async function runCommand(plans, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i]);
+    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i], 'run');
     const prompt = buildExecutePrompt(config, planAssignments[i]);
 
     // Write prompt to a file in the instance directory (no password — that goes via env)
@@ -160,14 +160,14 @@ export async function runCommand(plans, options) {
 
   // Open Terminal.app windows
   const termSpinner = ora('Opening Terminal windows...').start();
-  const { ttys, windowIds } = openWindows(instances, layouts);
+  const { ttys, windowIds } = openWindows(instances, layouts, 'run');
   termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
 
   // Save TTYs and window IDs for cleanup (titles get overwritten by Claude CLI)
   const hivetestDir = resolve(cwd, '.hivetest');
   await mkdir(hivetestDir, { recursive: true });
-  await writeFile(resolve(hivetestDir, 'ttys.json'), JSON.stringify(ttys));
-  await writeFile(resolve(hivetestDir, 'windowIds.json'), JSON.stringify(windowIds));
+  await writeFile(resolve(hivetestDir, 'ttys-run.json'), JSON.stringify(ttys));
+  await writeFile(resolve(hivetestDir, 'windowIds-run.json'), JSON.stringify(windowIds));
 
   console.log(chalk.green('\nAll instances launched.'));
   console.log(chalk.gray('Tip: Cmd+Tab to switch between Terminal and browser windows'));

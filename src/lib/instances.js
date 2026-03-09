@@ -7,13 +7,13 @@ import { writeMcpConfig } from './mcp.js';
  * Get the instance directory name for a given index.
  * Instances are siblings of the project directory.
  */
-export function getInstanceDirName(config, index) {
-  return `${config.name}-hivetest-${index}`;
+export function getInstanceDirName(config, index, type) {
+  return `${config.name}-hivetest-${type}-${index}`;
 }
 
-export function getInstanceDir(projectDir, config, index) {
+export function getInstanceDir(projectDir, config, index, type) {
   const parent = dirname(projectDir);
-  return resolve(parent, getInstanceDirName(config, index));
+  return resolve(parent, getInstanceDirName(config, index, type));
 }
 
 /**
@@ -32,8 +32,8 @@ export async function findInstanceDirs(projectDir, config) {
 /**
  * Create an instance directory with symlinks and .mcp.json.
  */
-export async function createInstance(projectDir, config, index, windowLayout) {
-  const instanceDir = getInstanceDir(projectDir, config, index);
+export async function createInstance(projectDir, config, index, windowLayout, type) {
+  const instanceDir = getInstanceDir(projectDir, config, index, type);
 
   // Create the instance directory
   if (existsSync(instanceDir)) {

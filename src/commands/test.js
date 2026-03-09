@@ -48,8 +48,8 @@ export async function testCommand(tickets, options) {
     console.warn(chalk.yellow('Warning: No Jira MCP server found in config. The agent may not be able to read tickets.'));
   }
 
-  // Check for existing hivetest Terminal windows
-  if (windowsExist()) {
+  // Check for existing hivetest test Terminal windows
+  if (windowsExist('test')) {
     const { action } = await inquirer.prompt([
       {
         type: 'list',
@@ -62,7 +62,7 @@ export async function testCommand(tickets, options) {
       },
     ]);
     if (action === 'cancel') return;
-    closeWindows(config.playwright?.userDataDirPrefix);
+    closeWindows(config.playwright?.userDataDirPrefix, [], [], 'test');
   }
 
   // Get password
@@ -123,7 +123,7 @@ export async function testCommand(tickets, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i]);
+    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i], 'test');
     const prompt = buildTestPrompt(config, ticketAssignments[i]);
 
     // Write prompt to a file in the instance directory
@@ -144,14 +144,14 @@ export async function testCommand(tickets, options) {
 
   // Open Terminal.app windows
   const termSpinner = ora('Opening Terminal windows...').start();
-  const { ttys, windowIds } = openWindows(instances, layouts);
+  const { ttys, windowIds } = openWindows(instances, layouts, 'test');
   termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
 
   // Save TTYs and window IDs for cleanup
   const hivetestDir = resolve(cwd, '.hivetest');
   await mkdir(hivetestDir, { recursive: true });
-  await writeFile(resolve(hivetestDir, 'ttys.json'), JSON.stringify(ttys));
-  await writeFile(resolve(hivetestDir, 'windowIds.json'), JSON.stringify(windowIds));
+  await writeFile(resolve(hivetestDir, 'ttys-test.json'), JSON.stringify(ttys));
+  await writeFile(resolve(hivetestDir, 'windowIds-test.json'), JSON.stringify(windowIds));
 
   console.log(chalk.green('\nAll instances launched.'));
   console.log(chalk.gray(`Testing: ${ticketIds.join(', ')}`));

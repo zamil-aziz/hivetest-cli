@@ -67,16 +67,18 @@ export async function cleanCommand(options) {
     }
   }
 
-  // Read stored TTYs and window IDs (titles may have been overwritten by Claude CLI)
+  // Read stored TTYs and window IDs from both run and test (titles may have been overwritten by Claude CLI)
   let fallbackTtys = [];
   let fallbackWindowIds = [];
-  const ttysFile = resolve(cwd, '.hivetest', 'ttys.json');
-  const windowIdsFile = resolve(cwd, '.hivetest', 'windowIds.json');
-  if (existsSync(ttysFile)) {
-    try { fallbackTtys = JSON.parse(readFileSync(ttysFile, 'utf-8')); } catch {}
-  }
-  if (existsSync(windowIdsFile)) {
-    try { fallbackWindowIds = JSON.parse(readFileSync(windowIdsFile, 'utf-8')); } catch {}
+  for (const type of ['run', 'test']) {
+    const ttysFile = resolve(cwd, '.hivetest', `ttys-${type}.json`);
+    const windowIdsFile = resolve(cwd, '.hivetest', `windowIds-${type}.json`);
+    if (existsSync(ttysFile)) {
+      try { fallbackTtys.push(...JSON.parse(readFileSync(ttysFile, 'utf-8'))); } catch {}
+    }
+    if (existsSync(windowIdsFile)) {
+      try { fallbackWindowIds.push(...JSON.parse(readFileSync(windowIdsFile, 'utf-8'))); } catch {}
+    }
   }
 
   // Kill browser processes and close Terminal windows

@@ -28,15 +28,16 @@ function isTerminalRunning() {
 /**
  * Check if any Terminal.app windows with hivetest titles exist.
  */
-export function windowsExist() {
+export function windowsExist(type) {
   if (!isTerminalRunning()) return false;
+  const prefix = type ? `hivetest-${type}-` : 'hivetest-';
   try {
     const result = runAppleScript(`
       tell application "Terminal"
         set found to false
         repeat with w in windows
           repeat with t in tabs of w
-            if custom title of t starts with "hivetest-" then
+            if custom title of t starts with "${prefix}" then
               set found to true
               exit repeat
             end if
@@ -56,7 +57,7 @@ export function windowsExist() {
  * Close all hivetest Terminal.app windows.
  * First kills processes on those TTYs, then closes the windows.
  */
-export function closeWindows(userDataDirPrefix, fallbackTtys = [], fallbackWindowIds = []) {
+export function closeWindows(userDataDirPrefix, fallbackTtys = [], fallbackWindowIds = [], type) {
   // Kill browser/Playwright processes matching hivetest's user-data-dir
   if (userDataDirPrefix) {
     try {
@@ -69,7 +70,7 @@ export function closeWindows(userDataDirPrefix, fallbackTtys = [], fallbackWindo
   if (!isTerminalRunning()) return;
   try {
     // Get TTYs of hivetest windows by title
-    let ttys = getTtysByTitle();
+    let ttys = getTtysByTitle(type);
     if (ttys.length === 0) ttys = fallbackTtys;
     if (ttys.length === 0) return;
 
@@ -114,14 +115,15 @@ export function closeWindows(userDataDirPrefix, fallbackTtys = [], fallbackWindo
 /**
  * Get TTYs of Terminal tabs with hivetest custom titles.
  */
-function getTtysByTitle() {
+function getTtysByTitle(type) {
+  const prefix = type ? `hivetest-${type}-` : 'hivetest-';
   try {
     const result = runAppleScript(`
       tell application "Terminal"
         set ttyList to {}
         repeat with w in windows
           repeat with t in tabs of w
-            if custom title of t starts with "hivetest-" then
+            if custom title of t starts with "${prefix}" then
               set end of ttyList to tty of t
             end if
           end repeat
@@ -141,7 +143,7 @@ function getTtysByTitle() {
  * Each instance should have { dir, command, env }.
  * layouts is an array of { x, y, width, height }.
  */
-export function openWindows(instances, layouts) {
+export function openWindows(instances, layouts, type) {
   const scriptParts = ['tell application "Terminal"', '  activate', '  set ttyList to {}', '  set widList to {}'];
 
   for (let i = 0; i < instances.length; i++) {
@@ -165,7 +167,7 @@ export function openWindows(instances, layouts) {
     const bottom = layout.y + layout.height;
 
     scriptParts.push(`  set newTab to do script ${asString(shellCmd)}`);
-    scriptParts.push(`  set custom title of newTab to "hivetest-${i + 1}"`);
+    scriptParts.push(`  set custom title of newTab to "hivetest-${type}-${i + 1}"`);
     scriptParts.push(`  set title displays custom title of newTab to true`);
     scriptParts.push(`  set bounds of window 1 to {${left}, ${top}, ${right}, ${bottom}}`);
     scriptParts.push(`  set end of ttyList to tty of newTab`);
