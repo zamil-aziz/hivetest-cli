@@ -5,10 +5,11 @@ import { resolve } from 'path';
  * Write a Playwright MCP config file with browser launch options for window positioning.
  * Returns the path to the config file.
  */
-export async function writePlaywrightConfig(instanceDir, windowLayout, userDataDir) {
+export async function writePlaywrightConfig(instanceDir, windowLayout, userDataDir, contextOptions) {
   const config = {
     browser: {
       ...(userDataDir && { userDataDir }),
+      ...(contextOptions && { contextOptions }),
       launchOptions: {
         headless: false,
         args: [
@@ -69,7 +70,7 @@ export async function writeMcpConfig(instanceDir, config, instanceIndex, windowL
     const userDataDir = config.playwright
       ? `${config.playwright.userDataDirPrefix}-${instanceIndex}`
       : undefined;
-    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir);
+    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir, config.playwright?.contextOptions);
   }
 
   const mcpConfig = buildMcpConfig(config, instanceIndex, playwrightConfigPath, projectDir || instanceDir);
