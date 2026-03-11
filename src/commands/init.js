@@ -160,7 +160,7 @@ export async function initCommand() {
       testPlans: 'testplans',
       results: 'results',
     },
-    symlinks: ['CLAUDE.md'],
+    symlinks: ['CLAUDE.md', 'docs'],
     mcpServers,
   };
 
@@ -200,7 +200,7 @@ export async function initCommand() {
   }
 
   // Create directories
-  for (const dir of [config.directories.testPlans, config.directories.results]) {
+  for (const dir of [config.directories.testPlans, config.directories.results, 'docs']) {
     const dirPath = resolve(cwd, dir);
     if (!existsSync(dirPath)) {
       await mkdir(dirPath, { recursive: true });
@@ -212,7 +212,7 @@ export async function initCommand() {
   if (database) {
     console.log(chalk.green('Created dbhub.toml (database config, gitignored)'));
   }
-  console.log(chalk.green(`Created ${config.directories.testPlans}/ and ${config.directories.results}/`));
+  console.log(chalk.green(`Created ${config.directories.testPlans}/, ${config.directories.results}/, and docs/`));
   console.log(chalk.cyan('\nNext steps:'));
   console.log(`  ${chalk.bold('hivetest generate')}  — Opus explores app & generates test plans`);
   console.log(`  ${chalk.bold('hivetest run 01 02')} — Execute plans in parallel`);
