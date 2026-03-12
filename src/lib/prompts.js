@@ -219,7 +219,7 @@ ${ticketList}
 ## Verdict: PASS / FAIL
 \`\`\`
 5. **If all tests PASS**: Add a verification comment on the Jira ticket and move it to Done
-6. **If any test FAILS**: Write the results file but **ASK ME before posting a comment** on the ticket — do not comment automatically on failures
+6. **If any test FAILS**: Write the results file, then **STOP and ask me before doing anything** — do not add comments, move the ticket, or take any other action on the Jira ticket until I confirm
 
 ## Rules
 - Use fake test data (e.g. "Test User Alpha", +1-555-01XX, test@example.com)
