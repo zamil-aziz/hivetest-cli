@@ -64,6 +64,11 @@ export async function initCommand() {
       message: 'Test account password:',
       mask: '*',
     },
+    {
+      type: 'input',
+      name: 'jiraProjectKey',
+      message: 'Jira project key (e.g. HAV):',
+    },
   ]);
 
   // Optional database connection
@@ -156,6 +161,10 @@ export async function initCommand() {
     symlinks: ['CLAUDE.md', 'docs'],
     mcpServers,
   };
+
+  if (answers.jiraProjectKey?.trim()) {
+    config.jira = { projectKey: answers.jiraProjectKey.trim().toUpperCase() };
+  }
 
   if (playwright) {
     config.playwright = playwright;

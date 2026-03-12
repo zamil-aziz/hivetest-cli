@@ -20,12 +20,8 @@ export async function testCommand(tickets, options) {
 
   checkPrerequisites();
 
-  // Validate jira.projectKey
   if (!config.jira?.projectKey) {
-    console.error(chalk.red('Missing jira.projectKey in hivetest.config.json'));
-    console.log(chalk.cyan('Add it to your config:'));
-    console.log(chalk.gray('  "jira": { "projectKey": "HAV" }'));
-    console.log(chalk.cyan('Or re-run "hivetest init" to set it up.'));
+    console.error(chalk.red('Missing jira.projectKey in config. Run "hivetest init" or add it manually.'));
     return;
   }
 
@@ -103,7 +99,7 @@ export async function testCommand(tickets, options) {
 
   // Calculate window layouts for tiling browser windows
   const { width: screenWidth, height: screenHeight } = getScreenResolution();
-  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight, 2);
 
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });

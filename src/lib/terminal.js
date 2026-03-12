@@ -167,11 +167,13 @@ export function openWindows(instances, layouts, type) {
     const bottom = layout.y + layout.height;
 
     scriptParts.push(`  set newTab to do script ${asString(shellCmd)}`);
+    scriptParts.push(`  delay 0.3`);
+    scriptParts.push(`  set currentWindow to window 1`);
     scriptParts.push(`  set custom title of newTab to "hivetest-${type}-${i + 1}"`);
     scriptParts.push(`  set title displays custom title of newTab to true`);
-    scriptParts.push(`  set bounds of window 1 to {${left}, ${top}, ${right}, ${bottom}}`);
+    scriptParts.push(`  set bounds of currentWindow to {${left}, ${top}, ${right}, ${bottom}}`);
     scriptParts.push(`  set end of ttyList to tty of newTab`);
-    scriptParts.push(`  set end of widList to id of window 1`);
+    scriptParts.push(`  set end of widList to id of currentWindow`);
   }
 
   scriptParts.push('  set AppleScript\'s text item delimiters to ","');
