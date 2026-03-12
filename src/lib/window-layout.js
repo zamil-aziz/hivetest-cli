@@ -51,9 +51,9 @@ export function getScreenResolution() {
  * Calculate window layouts for N instances in a grid.
  * Returns [{x, y, width, height}, ...] for each instance.
  */
-export function calculateWindowLayouts(numInstances, screenWidth, screenHeight, minRows = 1) {
+export function calculateWindowLayouts(numInstances, screenWidth, screenHeight) {
   const cols = numInstances <= 3 ? numInstances : 2;
-  const rows = Math.max(Math.ceil(numInstances / cols), minRows);
+  const rows = Math.ceil(numInstances / cols);
 
   const usableHeight = screenHeight - MENU_BAR_HEIGHT;
   const cellWidth = Math.floor(screenWidth / cols);

@@ -83,7 +83,7 @@ export async function testCommand(tickets, options) {
       console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
       process.exit(1);
     }
-    maxInstances = Math.min(maxInstances, 4);
+    maxInstances = Math.min(maxInstances, 2);
   } else {
     maxInstances = config.maxInstances;
   }
@@ -97,9 +97,11 @@ export async function testCommand(tickets, options) {
     console.log(chalk.gray(`  Instance ${i + 1}: ${ticketAssignments[i].join(', ')}`));
   }
 
-  // Calculate window layouts for tiling browser windows
+  // Calculate full 2x2 grid: top row = browsers, bottom row = terminals
   const { width: screenWidth, height: screenHeight } = getScreenResolution();
-  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight, 2);
+  const gridLayouts = calculateWindowLayouts(4, screenWidth, screenHeight);
+  const browserLayouts = gridLayouts.slice(0, 2);
+  const terminalLayouts = gridLayouts.slice(2, 4);
 
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });
@@ -119,7 +121,7 @@ export async function testCommand(tickets, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i], 'test');
+    const instanceDir = await createInstance(cwd, config, i + 1, browserLayouts[i], 'test');
     const prompt = buildTestPrompt(config, ticketAssignments[i]);
 
     // Write prompt to a file in the instance directory
@@ -140,7 +142,7 @@ export async function testCommand(tickets, options) {
 
   // Open Terminal.app windows
   const termSpinner = ora('Opening Terminal windows...').start();
-  const { ttys, windowIds } = openWindows(instances, layouts, 'test');
+  const { ttys, windowIds } = openWindows(instances, terminalLayouts, 'test');
   termSpinner.succeed(`Opened ${numInstances} Terminal window(s)`);
 
   // Save TTYs and window IDs for cleanup
