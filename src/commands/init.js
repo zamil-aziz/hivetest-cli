@@ -92,13 +92,6 @@ export async function initCommand() {
     database = { sourceId, tomlFile: 'dbhub.toml' };
   }
 
-  // Optional Jira project key
-  const { jiraKey } = await inquirer.prompt([{
-    type: 'input',
-    name: 'jiraKey',
-    message: 'Jira project key (e.g., HAV) — leave blank to skip:',
-  }]);
-
   // Build MCP servers config
   let mcpServers = {};
   if (existingMcp?.mcpServers) {
@@ -170,11 +163,6 @@ export async function initCommand() {
 
   if (database) {
     config.database = database;
-  }
-
-  const trimmedJiraKey = jiraKey.toUpperCase().trim();
-  if (trimmedJiraKey) {
-    config.jira = { projectKey: trimmedJiraKey };
   }
 
   // Write config
