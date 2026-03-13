@@ -75,7 +75,7 @@ export async function testCommand(tickets, options) {
     password = pw;
   }
 
-  // Determine number of instances (capped at 4 for 2x2 grid)
+  // Determine number of instances
   let maxInstances;
   if (options.max !== undefined) {
     maxInstances = parseInt(options.max, 10);
@@ -83,7 +83,6 @@ export async function testCommand(tickets, options) {
       console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
       process.exit(1);
     }
-    maxInstances = Math.min(maxInstances, 2);
   } else {
     maxInstances = config.maxInstances;
   }
@@ -97,11 +96,19 @@ export async function testCommand(tickets, options) {
     console.log(chalk.gray(`  Instance ${i + 1}: ${ticketAssignments[i].join(', ')}`));
   }
 
-  // Calculate full 2x2 grid: top row = browsers, bottom row = terminals
+  // Calculate window layouts
   const { width: screenWidth, height: screenHeight } = getScreenResolution();
-  const gridLayouts = calculateWindowLayouts(4, screenWidth, screenHeight);
-  const browserLayouts = gridLayouts.slice(0, 2);
-  const terminalLayouts = gridLayouts.slice(2, 4);
+  let browserLayouts, terminalLayouts;
+  if (options.headless) {
+    // Headless: no browser windows, all grid cells are terminals
+    terminalLayouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+    browserLayouts = [];
+  } else {
+    // Visible: top half = browsers, bottom half = terminals
+    const gridLayouts = calculateWindowLayouts(numInstances * 2, screenWidth, screenHeight);
+    browserLayouts = gridLayouts.slice(0, numInstances);
+    terminalLayouts = gridLayouts.slice(numInstances);
+  }
 
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });
@@ -121,7 +128,7 @@ export async function testCommand(tickets, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, browserLayouts[i], 'test');
+    const instanceDir = await createInstance(cwd, config, i + 1, options.headless ? null : browserLayouts[i], 'test', options.headless);
     const prompt = buildTestPrompt(config, ticketAssignments[i]);
 
     // Write prompt to a file in the instance directory

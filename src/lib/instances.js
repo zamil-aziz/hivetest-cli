@@ -32,7 +32,7 @@ export async function findInstanceDirs(projectDir, config) {
 /**
  * Create an instance directory with symlinks and .mcp.json.
  */
-export async function createInstance(projectDir, config, index, windowLayout, type) {
+export async function createInstance(projectDir, config, index, windowLayout, type, headless) {
   const instanceDir = getInstanceDir(projectDir, config, index, type);
 
   // Create the instance directory
@@ -60,7 +60,7 @@ export async function createInstance(projectDir, config, index, windowLayout, ty
   }
 
   // Write .mcp.json
-  await writeMcpConfig(instanceDir, config, index, windowLayout, projectDir);
+  await writeMcpConfig(instanceDir, config, index, windowLayout, projectDir, headless);
 
   return instanceDir;
 }

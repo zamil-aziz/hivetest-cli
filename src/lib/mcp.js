@@ -5,18 +5,22 @@ import { resolve } from 'path';
  * Write a Playwright MCP config file with browser launch options for window positioning.
  * Returns the path to the config file.
  */
-export async function writePlaywrightConfig(instanceDir, windowLayout, userDataDir, contextOptions) {
-  const config = {
-    browser: {
-      ...(userDataDir && { userDataDir }),
-      ...(contextOptions && { contextOptions }),
-      launchOptions: {
+export async function writePlaywrightConfig(instanceDir, windowLayout, userDataDir, contextOptions, headless) {
+  const launchOptions = headless
+    ? { headless: true }
+    : {
         headless: false,
         args: [
           `--window-position=${windowLayout.x},${windowLayout.y}`,
           `--window-size=${windowLayout.width},${windowLayout.height}`,
         ],
-      },
+      };
+
+  const config = {
+    browser: {
+      ...(userDataDir && { userDataDir }),
+      ...(contextOptions && { contextOptions }),
+      launchOptions,
     },
   };
   const configPath = resolve(instanceDir, 'playwright-mcp-config.json');
@@ -64,13 +68,13 @@ export function buildMcpConfig(config, instanceIndex, playwrightConfigPath, proj
   return { mcpServers };
 }
 
-export async function writeMcpConfig(instanceDir, config, instanceIndex, windowLayout, projectDir) {
+export async function writeMcpConfig(instanceDir, config, instanceIndex, windowLayout, projectDir, headless) {
   let playwrightConfigPath;
-  if (windowLayout) {
+  if (windowLayout || headless) {
     const userDataDir = config.playwright
       ? `${config.playwright.userDataDirPrefix}-${instanceIndex}`
       : undefined;
-    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir, config.playwright?.contextOptions);
+    playwrightConfigPath = await writePlaywrightConfig(instanceDir, windowLayout, userDataDir, config.playwright?.contextOptions, headless);
   }
 
   const mcpConfig = buildMcpConfig(config, instanceIndex, playwrightConfigPath, projectDir || instanceDir);

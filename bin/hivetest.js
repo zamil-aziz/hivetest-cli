@@ -30,6 +30,7 @@ program
   .description('Execute test plans in parallel via Terminal.app + Claude Code')
   .argument('[plans...]', 'Plan numbers to execute (e.g., 05 06 07)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
+  .option('--headless', 'Run browsers in headless mode')
   .action(runCommand);
 
 program
@@ -44,6 +45,7 @@ program
   .description('Verify Jira ticket fixes via browser testing')
   .argument('<tickets...>', 'Jira ticket numbers (e.g., 1131 1139)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
+  .option('--headless', 'Run browsers in headless mode')
   .action(testCommand);
 
 program

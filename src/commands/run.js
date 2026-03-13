@@ -95,7 +95,7 @@ export async function runCommand(plans, options) {
     password = pw;
   }
 
-  // Determine number of instances (capped at 4 for 2x2 grid)
+  // Determine number of instances
   let maxInstances;
   if (options.max !== undefined) {
     maxInstances = parseInt(options.max, 10);
@@ -103,7 +103,6 @@ export async function runCommand(plans, options) {
       console.error(chalk.red(`Invalid --max value "${options.max}". Must be a positive integer.`));
       process.exit(1);
     }
-    maxInstances = Math.min(maxInstances, 4);
   } else {
     maxInstances = config.maxInstances;
   }
@@ -139,7 +138,7 @@ export async function runCommand(plans, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i], 'run');
+    const instanceDir = await createInstance(cwd, config, i + 1, layouts[i], 'run', options.headless);
     const prompt = buildExecutePrompt(config, planAssignments[i]);
 
     // Write prompt to a file in the instance directory (no password — that goes via env)
