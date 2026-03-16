@@ -5,53 +5,52 @@ const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 
 /**
- * Detect the main display resolution on macOS.
- * Halves pixel dimensions for Retina displays.
- * Falls back to 1920x1080.
+ * Detect all connected displays via macOS JXA (NSScreen).
+ * Returns array of { index, x, y, width, height, isMain, name }.
+ * Coordinates are in top-left origin (screen coordinates used by AppleScript/Chrome).
+ * Falls back to a single default display on failure.
  */
-export function getScreenResolution() {
+export function getAllDisplays() {
   try {
-    const json = execSync('system_profiler SPDisplaysDataType -json', {
+    const jxa = `
+ObjC.import('AppKit');
+var screens = $.NSScreen.screens;
+var count = screens.count;
+var mainFrame = screens.objectAtIndex(0).frame;
+var mainHeight = mainFrame.size.height;
+var result = [];
+for (var i = 0; i < count; i++) {
+  var screen = screens.objectAtIndex(i);
+  var frame = screen.frame;
+  var nsX = frame.origin.x;
+  var nsY = frame.origin.y;
+  var w = frame.size.width;
+  var h = frame.size.height;
+  var screenY = mainHeight - nsY - h;
+  var name = screen.localizedName.js;
+  result.push({ index: i + 1, x: nsX, y: screenY, width: w, height: h, isMain: i === 0, name: name });
+}
+JSON.stringify(result);
+`;
+    const output = execSync(`osascript -l JavaScript -e '${jxa.replace(/'/g, "'\\''")}'`, {
       encoding: 'utf-8',
       timeout: 5000,
-    });
-    const data = JSON.parse(json);
-    const displays = data.SPDisplaysDataType?.[0]?.spdisplays_ndrvs;
-    if (!displays?.length) return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
-
-    // Find the main display (or use the first one)
-    const main = displays.find((d) => d.spdisplays_main === 'spdisplays_yes') || displays[0];
-    const res = main._spdisplays_resolution;
-    if (!res) return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
-
-    // Parse "3456 x 2234" or "3456 x 2234 @ 60Hz" style strings
-    const match = res.match(/(\d+)\s*x\s*(\d+)/);
-    if (!match) return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
-
-    let width = parseInt(match[1], 10);
-    let height = parseInt(match[2], 10);
-
-    // Halve for Retina
-    const isRetina =
-      main.spdisplays_retina === 'spdisplays_yes' ||
-      res.toLowerCase().includes('retina') ||
-      main._spdisplays_pixels?.includes('Retina');
-    if (isRetina) {
-      width = Math.floor(width / 2);
-      height = Math.floor(height / 2);
-    }
-
-    return { width, height };
+    }).trim();
+    const displays = JSON.parse(output);
+    if (displays.length > 0) return displays;
   } catch {
-    return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+    // fall through to default
   }
+  return [{ index: 1, x: 0, y: 0, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, isMain: true, name: 'Main' }];
 }
 
 /**
  * Calculate window layouts for N instances in a grid.
+ * Accepts a display object { x, y, width, height }.
  * Returns [{x, y, width, height}, ...] for each instance.
  */
-export function calculateWindowLayouts(numInstances, screenWidth, screenHeight) {
+export function calculateWindowLayouts(numInstances, display) {
+  const { x: displayX, y: displayY, width: screenWidth, height: screenHeight } = display;
   let cols;
   if (numInstances <= 3) {
     cols = numInstances;
@@ -77,8 +76,8 @@ export function calculateWindowLayouts(numInstances, screenWidth, screenHeight) 
     const col = i % cols;
     const row = Math.floor(i / cols);
     layouts.push({
-      x: col * cellWidth,
-      y: MENU_BAR_HEIGHT + row * cellHeight,
+      x: displayX + col * cellWidth,
+      y: displayY + MENU_BAR_HEIGHT + row * cellHeight,
       width: cellWidth,
       height: cellHeight,
     });

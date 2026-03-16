@@ -7,7 +7,7 @@ import inquirer from 'inquirer';
 import { loadConfig, getPassword, loadDotEnv } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { createInstance } from '../lib/instances.js';
-import { getScreenResolution, calculateWindowLayouts } from '../lib/window-layout.js';
+import { getAllDisplays, calculateWindowLayouts } from '../lib/window-layout.js';
 import { buildTestPrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
 import { openWindows, windowsExist, closeWindows } from '../lib/terminal.js';
@@ -96,16 +96,30 @@ export async function testCommand(tickets, options) {
     console.log(chalk.gray(`  Instance ${i + 1}: ${ticketAssignments[i].join(', ')}`));
   }
 
+  // Pick target display: --screen override, else external monitor, else main
+  const displays = getAllDisplays();
+  let targetDisplay;
+  if (options.screen !== undefined) {
+    const idx = parseInt(options.screen, 10);
+    targetDisplay = displays.find((d) => d.index === idx);
+    if (!targetDisplay) {
+      console.warn(chalk.yellow(`Screen ${idx} not found. Available: ${displays.map((d) => `${d.index} (${d.name})`).join(', ')}`));
+      targetDisplay = displays[0];
+    }
+  } else {
+    targetDisplay = displays.find((d) => !d.isMain) || displays[0];
+  }
+  console.log(chalk.gray(`Using display: ${targetDisplay.name}${targetDisplay.isMain ? '' : ' (external)'}`));
+
   // Calculate window layouts
-  const { width: screenWidth, height: screenHeight } = getScreenResolution();
   let browserLayouts, terminalLayouts;
   if (options.headless) {
     // Headless: no browser windows, all grid cells are terminals
-    terminalLayouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+    terminalLayouts = calculateWindowLayouts(numInstances, targetDisplay);
     browserLayouts = [];
   } else {
     // Visible: top half = browsers, bottom half = terminals
-    const gridLayouts = calculateWindowLayouts(numInstances * 2, screenWidth, screenHeight);
+    const gridLayouts = calculateWindowLayouts(numInstances * 2, targetDisplay);
     browserLayouts = gridLayouts.slice(0, numInstances);
     terminalLayouts = gridLayouts.slice(numInstances);
   }

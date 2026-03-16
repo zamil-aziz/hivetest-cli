@@ -7,7 +7,7 @@ import inquirer from 'inquirer';
 import { loadConfig, getPassword, loadDotEnv } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { createInstance } from '../lib/instances.js';
-import { getScreenResolution, calculateWindowLayouts } from '../lib/window-layout.js';
+import { getAllDisplays, calculateWindowLayouts } from '../lib/window-layout.js';
 import { buildExecutePrompt } from '../lib/prompts.js';
 import { buildClaudeArgs } from '../lib/claude.js';
 import { openWindows, windowsExist, closeWindows } from '../lib/terminal.js';
@@ -116,9 +116,23 @@ export async function runCommand(plans, options) {
     console.log(chalk.gray(`  Instance ${i + 1}: ${planAssignments[i].join(', ')}`));
   }
 
+  // Pick target display: --screen override, else main display
+  const displays = getAllDisplays();
+  let targetDisplay;
+  if (options.screen !== undefined) {
+    const idx = parseInt(options.screen, 10);
+    targetDisplay = displays.find((d) => d.index === idx);
+    if (!targetDisplay) {
+      console.warn(chalk.yellow(`Screen ${idx} not found. Available: ${displays.map((d) => `${d.index} (${d.name})`).join(', ')}`));
+      targetDisplay = displays[0];
+    }
+  } else {
+    targetDisplay = displays.find((d) => d.isMain) || displays[0];
+  }
+  console.log(chalk.gray(`Using display: ${targetDisplay.name}${targetDisplay.isMain ? '' : ' (external)'}`));
+
   // Calculate window layouts for tiling browser windows
-  const { width: screenWidth, height: screenHeight } = getScreenResolution();
-  const layouts = calculateWindowLayouts(numInstances, screenWidth, screenHeight);
+  const layouts = calculateWindowLayouts(numInstances, targetDisplay);
 
   // Build claude args (shared across instances)
   const claudeArgs = buildClaudeArgs({ model: config.models.execute });

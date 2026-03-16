@@ -31,6 +31,7 @@ program
   .argument('[plans...]', 'Plan numbers to execute (e.g., 05 06 07)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
   .option('--headless', 'Run browsers in headless mode')
+  .option('--screen <n>', 'Target screen number (1=main, 2=secondary, ...)')
   .action(runCommand);
 
 program
@@ -46,6 +47,7 @@ program
   .argument('<tickets...>', 'Jira ticket numbers (e.g., 1131 1139)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
   .option('--headless', 'Run browsers in headless mode')
+  .option('--screen <n>', 'Target screen number (1=main, 2=secondary, ...)')
   .action(testCommand);
 
 program
