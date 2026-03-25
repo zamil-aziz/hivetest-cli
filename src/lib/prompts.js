@@ -178,6 +178,14 @@ Execute each test plan sequentially. For each test plan file:
 - If you encounter a bug, note it in the results file
 - Use /compact if context gets large, then continue from the results file
 
+## Error Recovery
+- If you hit an API error (e.g. "no low surrogate", "content filtering policy", or any 400/500 error), do NOT stop testing:
+  1. Run /compact to clear context (this removes cached DOM content that may be causing the error)
+  2. Re-read your results file to find where you left off
+  3. Continue from the next PENDING test case
+- Prefer targeted element queries (getByRole, getByText, locator) over full-page browser_snapshot to minimize DOM capture size and avoid encoding errors
+- When describing test results for medical/clinical features, keep language minimal and factual
+
 Start by reading the first test plan and logging into the application.`;
 }
 
