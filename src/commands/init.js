@@ -71,6 +71,8 @@ export async function initCommand() {
     },
   ]);
 
+  const slug = answers.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+
   // Optional database connection
   const { connectDb } = await inquirer.prompt([{
     type: 'confirm',
@@ -88,7 +90,7 @@ export async function initCommand() {
       validate: (v) => v.startsWith('postgresql://') || v.startsWith('postgres://') || 'Must be a PostgreSQL connection string',
     }]);
 
-    const sourceId = answers.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-db';
+    const sourceId = slug + '-db';
 
     // Write dbhub.toml
     const toml = `[[sources]]\nid = "${sourceId}"\ndsn = "${dsn}"\n\n[[tools]]\nname = "execute_sql"\nsource = "${sourceId}"\nreadonly = true\n`;
@@ -124,7 +126,7 @@ export async function initCommand() {
     playwright = {
       command: 'npx',
       args: ['-y', '@playwright/mcp@0.0.68'],
-      userDataDirPrefix: '/tmp/hivetest-playwright',
+      userDataDirPrefix: `/tmp/hivetest-playwright-${slug}`,
     };
     console.log(chalk.cyan('Added Playwright MCP for browser automation.'));
   } else {
@@ -134,7 +136,7 @@ export async function initCommand() {
         playwright = {
           command: server.command,
           args: server.args.filter((a) => !a.includes('user-data-dir')),
-          userDataDirPrefix: '/tmp/hivetest-playwright',
+          userDataDirPrefix: `/tmp/hivetest-playwright-${slug}`,
         };
         delete mcpServers[name];
         break;

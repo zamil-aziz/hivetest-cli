@@ -62,6 +62,12 @@ export async function loadConfig(dir = process.cwd()) {
   config.maxInstances = config.maxInstances || 8;
   config.symlinks = config.symlinks || [];
 
+  // Migrate legacy hardcoded userDataDirPrefix to project-specific path
+  if (config.playwright?.userDataDirPrefix === '/tmp/hivetest-playwright') {
+    const slug = config.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+    config.playwright.userDataDirPrefix = `/tmp/hivetest-playwright-${slug}`;
+  }
+
   return config;
 }
 
