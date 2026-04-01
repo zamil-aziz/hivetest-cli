@@ -207,7 +207,7 @@ ${ticketList}
 
 ## For each ticket:
 
-- **Before testing**, check the ticket title prefix (e.g. [DeskClinic], [HavaHR]). If the prefix doesn't start with "${config.name}" (e.g. [${config.name}-Testing] or [${config.name}-Staging] are fine — they count as a match), warn the user that this ticket may belong to a different product and ask whether to proceed.
+- **Before testing**, check the ticket title prefix (e.g. [DeskClinic], [HavaHR]). If neither the prefix contains "${config.name}" nor "${config.name}" contains the prefix (e.g. a ticket tagged [Roundso] matches config name "Roundso-Testing" because the config name contains the prefix, and [Roundso-Testing] also matches because the prefix contains the config name), warn the user that this ticket may belong to a different product and ask whether to proceed.
 
 1. **Read the ticket** via Jira MCP — get the bug description, reproduction steps, return comments, and developer comments
 2. **Log in** to ${config.url} and verify the fix works
