@@ -33,8 +33,8 @@ export async function testCommand(tickets, options) {
 
   console.log(chalk.cyan(`\nTickets to retest: ${ticketIds.join(', ')}`));
 
-  // Warn if no Jira MCP server found
-  const hasJiraMcp = Object.values(config.mcpServers || {}).some(
+  // Warn if no Jira MCP server available (check both config.jira.url and mcpServers)
+  const hasJiraMcp = config.jira?.url || Object.values(config.mcpServers || {}).some(
     (s) =>
       s.command?.includes('jira') ||
       s.args?.some((a) => a.includes('jira')) ||
@@ -42,6 +42,9 @@ export async function testCommand(tickets, options) {
   );
   if (!hasJiraMcp) {
     console.warn(chalk.yellow('Warning: No Jira MCP server found in config. The agent may not be able to read tickets.'));
+    console.warn(chalk.yellow('Run "hivetest init" and provide Jira URL + credentials to configure it.'));
+  } else if (config.jira?.url && (!process.env.JIRA_API_TOKEN || !process.env.JIRA_USERNAME)) {
+    console.warn(chalk.yellow('Warning: JIRA_API_TOKEN or JIRA_USERNAME not found in .env. Jira MCP may fail to authenticate.'));
   }
 
   // Check for existing hivetest test Terminal windows

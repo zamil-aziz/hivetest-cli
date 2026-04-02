@@ -44,6 +44,19 @@ export function buildMcpConfig(config, instanceIndex, playwrightConfigPath, proj
     };
   }
 
+  // Add Atlassian MCP server if Jira is configured (skip if manually imported)
+  if (config.jira?.url && !mcpServers.atlassian) {
+    mcpServers.atlassian = {
+      command: 'uvx',
+      args: [
+        'mcp-atlassian',
+        '--jira-url', config.jira.url,
+        '--jira-username', process.env.JIRA_USERNAME || '',
+        '--jira-token', process.env.JIRA_API_TOKEN || '',
+      ],
+    };
+  }
+
   // Add Playwright with unique user-data-dir per instance
   if (config.playwright) {
     const playwrightArgs = [...config.playwright.args];

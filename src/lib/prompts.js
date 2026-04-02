@@ -23,12 +23,19 @@ You will explore the app and write test plans **one section at a time**, writing
 3. Query the database schema via the database MCP tool (tables, columns, enums, relationships)
 4. **Write the following files immediately:**
 
-   **CLAUDE.md** (~5 lines only — keep it minimal):
+   **CLAUDE.md** — keep it minimal:
    \`\`\`
    # [App Name]
    [Category] — [One-line description]
 
-   Reference: docs/schema.md, docs/navigation-map.md, docs/industry-practices.md
+   Reference: docs/schema.md, docs/navigation-map.md, docs/industry-practices.md${config.jira?.url ? `
+
+   ## Bug Reporting — Jira
+   - Project: ${config.jira.projectKey} (${config.jira.url})
+   - To create a ticket: use the Jira MCP \`jira_create_issue\` tool with project key "${config.jira.projectKey}", issue type "Bug"
+   - Title format: [${config.name}] brief description of the bug
+   - Include: steps to reproduce, expected vs actual behavior, and screenshots if relevant
+   - Never mention Playwright, test cases, automation, or internal tooling in tickets — write as a human tester would` : ''}
    \`\`\`
 
    **docs/navigation-map.md** — Complete navigation map:
