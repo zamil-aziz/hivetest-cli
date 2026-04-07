@@ -156,7 +156,7 @@ Execute each test plan sequentially. For each test plan file:
 3. **Execute each test case** using the browser (Playwright MCP) and database queries:
    - Navigate to the relevant page
    - Perform the steps described
-   - Verify expected results in both UI and database
+   - Verify expected results in the UI (and database if available)
    - Record PASS, FAIL, or BLOCKED
 4. **Update the results file IMMEDIATELY after EACH test case** — do not batch updates
 5. After completing all cases in a file, move to the next plan
@@ -179,7 +179,7 @@ Execute each test plan sequentially. For each test plan file:
 \`\`\`
 
 ## Important Rules
-- Use clearly fake test data (names like "Test Patient Alpha")
+- Use clearly fake test data (names like "Test User Alpha")
 - Never use real phone numbers — use +1-555-01XX format
 - Never use real emails — use testXXX@example.com format
 - After EVERY test case, update the results file immediately
@@ -192,7 +192,6 @@ Execute each test plan sequentially. For each test plan file:
   2. Re-read your results file to find where you left off
   3. Continue from the next PENDING test case
 - Prefer targeted element queries (getByRole, getByText, locator) over full-page browser_snapshot to minimize DOM capture size and avoid encoding errors
-- When describing test results for medical/clinical features, keep language minimal and factual
 
 Start by reading the first test plan and logging into the application.`;
 }
@@ -234,13 +233,19 @@ ${ticketList}
 
 ## Verdict: PASS / FAIL
 \`\`\`
-5. **If all tests PASS**: Add a verification comment on the Jira ticket. Do NOT move the ticket — I will move it myself.
-6. **If any test FAILS**: Write the results file, then **STOP and ask me before doing anything** — do not add comments or move the ticket until I confirm. When I confirm, add a return comment on the Jira ticket with what failed. Do NOT move the ticket — I will move it myself.
+5. **After writing results**, ask me before adding any comments or making any changes on the Jira ticket. Do NOT move the ticket — I will move it myself.
 
 ## Rules
 - Use fake test data (e.g. "Test User Alpha", +1-555-01XX, test@example.com)
 - Write results immediately after each ticket
 - If the bug is already fixed / can't be reproduced, that's a PASS
+
+## Error Recovery
+- If you hit an API error (e.g. "no low surrogate", "content filtering policy", or any 400/500 error), do NOT stop testing:
+  1. Run /compact to clear context (this removes cached DOM content that may be causing the error)
+  2. Re-read your results files to find where you left off
+  3. Continue from the next ticket
+- Prefer targeted element queries (getByRole, getByText, locator) over full-page browser_snapshot to minimize DOM capture size and avoid encoding errors
 
 Start by reading the first ticket.`;
 }
