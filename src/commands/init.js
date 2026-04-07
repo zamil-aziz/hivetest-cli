@@ -64,43 +64,7 @@ export async function initCommand() {
       message: 'Test account password:',
       mask: '*',
     },
-    {
-      type: 'input',
-      name: 'jiraProjectKey',
-      message: 'Jira project key (e.g. HAV):',
-    },
   ]);
-
-  // Follow-up Jira configuration when project key is provided
-  let jiraConfig = null;
-  if (answers.jiraProjectKey?.trim()) {
-    const jiraAnswers = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'jiraUrl',
-        message: 'Jira URL (e.g. https://yourteam.atlassian.net):',
-        validate: (v) => v.startsWith('https://') || 'Must be a valid HTTPS URL',
-      },
-      {
-        type: 'input',
-        name: 'jiraUsername',
-        message: 'Jira username (email):',
-        default: answers.email,
-      },
-      {
-        type: 'password',
-        name: 'jiraApiToken',
-        message: 'Jira API token:',
-        mask: '*',
-      },
-    ]);
-    jiraConfig = {
-      projectKey: answers.jiraProjectKey.trim().toUpperCase(),
-      url: jiraAnswers.jiraUrl.replace(/\/+$/, ''),
-      username: jiraAnswers.jiraUsername,
-      apiToken: jiraAnswers.jiraApiToken,
-    };
-  }
 
   const slug = answers.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
 
@@ -195,10 +159,6 @@ export async function initCommand() {
     mcpServers,
   };
 
-  if (jiraConfig) {
-    config.jira = { projectKey: jiraConfig.projectKey, url: jiraConfig.url };
-  }
-
   if (playwright) {
     config.playwright = playwright;
   }
@@ -213,12 +173,8 @@ export async function initCommand() {
     JSON.stringify(config, null, 2) + '\n'
   );
 
-  // Write .env with password and Jira credentials
-  let envContent = `HIVETEST_PASSWORD=${answers.password}\n`;
-  if (jiraConfig) {
-    envContent += `JIRA_USERNAME=${jiraConfig.username}\n`;
-    envContent += `JIRA_API_TOKEN=${jiraConfig.apiToken}\n`;
-  }
+  // Write .env with password
+  const envContent = `HIVETEST_PASSWORD=${answers.password}\n`;
   await writeFile(resolve(cwd, '.env'), envContent);
 
   // Append .env to .gitignore (create if missing)
