@@ -35,7 +35,8 @@ You will explore the app and write test plans **one section at a time**, writing
    - To create a ticket: use the Jira MCP \`jira_create_issue\` tool with project key "${config.jira.projectKey}", issue type "Bug"
    - Title format: [${config.name}] brief description of the bug
    - Include: steps to reproduce, expected vs actual behavior, and screenshots if relevant
-   - Never mention Playwright, test cases, automation, or internal tooling in tickets — write as a human tester would` : ''}
+   - Never mention Playwright, test cases, automation, or internal tooling in tickets — write as a human tester would
+   - **IMPORTANT**: Always ask for permission before creating tickets, adding comments, or making any changes in Jira` : ''}
    \`\`\`
 
    **docs/navigation-map.md** — Complete navigation map:
