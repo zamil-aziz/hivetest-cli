@@ -1,38 +1,55 @@
 import { mkdir, rm, symlink, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
-import { writeMcpConfig } from './mcp.js';
+import { writeRuntimeConfig } from './mcp.js';
 
 /**
  * Get the instance directory name for a given index.
- * Instances are siblings of the project directory.
+ * Instances live inside the project so Codex inherits trusted-project config.
  */
 export function getInstanceDirName(config, index, type) {
   return `${config.name}-hivetest-${type}-${index}`;
 }
 
+function getInstancesRoot(projectDir) {
+  return resolve(projectDir, '.hivetest', 'instances');
+}
+
 export function getInstanceDir(projectDir, config, index, type) {
-  const parent = dirname(projectDir);
-  return resolve(parent, getInstanceDirName(config, index, type));
+  return resolve(getInstancesRoot(projectDir), getInstanceDirName(config, index, type));
 }
 
 /**
  * Find existing instance directories.
  */
 export async function findInstanceDirs(projectDir, config) {
-  const parent = dirname(projectDir);
   const prefix = `${config.name}-hivetest-`;
-  const entries = await readdir(parent, { withFileTypes: true });
-  return entries
-    .filter((e) => e.isDirectory() && e.name.startsWith(prefix))
-    .map((e) => resolve(parent, e.name))
-    .sort();
+  const roots = [
+    getInstancesRoot(projectDir),
+    dirname(projectDir),
+  ];
+  const dirs = [];
+
+  for (const root of roots) {
+    if (!existsSync(root)) {
+      continue;
+    }
+
+    const entries = await readdir(root, { withFileTypes: true });
+    dirs.push(
+      ...entries
+        .filter((e) => e.isDirectory() && e.name.startsWith(prefix))
+        .map((e) => resolve(root, e.name))
+    );
+  }
+
+  return [...new Set(dirs)].sort();
 }
 
 /**
- * Create an instance directory with symlinks and .mcp.json.
+ * Create an instance directory with symlinks and provider runtime config.
  */
-export async function createInstance(projectDir, config, index, windowLayout, type, headless) {
+export async function createInstance(projectDir, config, index, windowLayout, type, headless, model) {
   const instanceDir = getInstanceDir(projectDir, config, index, type);
 
   // Create the instance directory
@@ -59,8 +76,10 @@ export async function createInstance(projectDir, config, index, windowLayout, ty
     }
   }
 
-  // Write .mcp.json
-  await writeMcpConfig(instanceDir, config, index, windowLayout, projectDir, headless);
+  // Write provider runtime config
+  await writeRuntimeConfig(instanceDir, config, index, windowLayout, projectDir, headless, model, {
+    includeInstructionsFile: existsSync(resolve(instanceDir, 'CLAUDE.md')),
+  });
 
   return instanceDir;
 }

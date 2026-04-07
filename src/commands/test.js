@@ -9,7 +9,7 @@ import { checkPrerequisites } from '../lib/prerequisites.js';
 import { createInstance } from '../lib/instances.js';
 import { getAllDisplays, calculateWindowLayouts } from '../lib/window-layout.js';
 import { buildTestPrompt } from '../lib/prompts.js';
-import { buildClaudeArgs } from '../lib/claude.js';
+import { buildProviderCommand } from '../lib/provider.js';
 import { openWindows, windowsExist, closeWindows } from '../lib/terminal.js';
 
 export async function testCommand(tickets, options) {
@@ -18,7 +18,7 @@ export async function testCommand(tickets, options) {
 
   await loadDotEnv(cwd);
 
-  checkPrerequisites();
+  checkPrerequisites(config);
 
   if (!config.jira?.projectKey) {
     console.error(chalk.red('Missing jira.projectKey in config. Run "hivetest init" or add it manually.'));
@@ -127,9 +127,6 @@ export async function testCommand(tickets, options) {
     terminalLayouts = gridLayouts.slice(numInstances);
   }
 
-  // Build claude args (shared across instances)
-  const claudeArgs = buildClaudeArgs({ model: config.models.execute });
-
   // Clean stale Playwright user data dirs to prevent lock file conflicts
   if (config.playwright?.userDataDirPrefix) {
     for (let i = 1; i <= numInstances; i++) {
@@ -145,7 +142,15 @@ export async function testCommand(tickets, options) {
   const instances = [];
 
   for (let i = 0; i < numInstances; i++) {
-    const instanceDir = await createInstance(cwd, config, i + 1, options.headless ? null : browserLayouts[i], 'test', options.headless);
+    const instanceDir = await createInstance(
+      cwd,
+      config,
+      i + 1,
+      options.headless ? null : browserLayouts[i],
+      'test',
+      options.headless,
+      config.models.execute
+    );
     const prompt = buildTestPrompt(config, ticketAssignments[i]);
 
     // Write prompt to a file in the instance directory
@@ -153,7 +158,11 @@ export async function testCommand(tickets, options) {
     await writeFile(promptFile, prompt);
 
     // Build the command string (reads prompt from file)
-    const command = `claude ${claudeArgs.join(' ')} "$(cat .hivetest-prompt.txt)"`;
+    const command = buildProviderCommand({
+      provider: config.provider,
+      model: config.models.execute,
+      phase: 'execute',
+    });
 
     instances.push({
       dir: instanceDir,

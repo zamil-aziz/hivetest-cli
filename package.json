@@ -1,7 +1,7 @@
 {
   "name": "hivetest-cli",
   "version": "0.1.0",
-  "description": "QA Test Orchestrator for Claude Code — generate test plans, execute in parallel, aggregate results",
+  "description": "QA test orchestrator for Claude Code and Codex",
   "type": "module",
   "bin": {
     "hivetest": "./bin/hivetest.js"
@@ -12,7 +12,7 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["qa", "testing", "claude", "orchestrator"],
+  "keywords": ["qa", "testing", "claude", "codex", "orchestrator"],
   "author": "zamil-aziz",
   "license": "MIT",
   "dependencies": {

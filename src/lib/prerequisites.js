@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import chalk from 'chalk';
+import { getProviderBinary, getProviderDisplayName } from './provider.js';
 
 function commandExists(cmd) {
   try {
@@ -18,11 +19,18 @@ function getVersion(cmd, flag = '--version') {
   }
 }
 
-export function checkPrerequisites() {
+export function checkPrerequisites(config) {
   const issues = [];
+  const provider = config?.provider || 'claude';
+  const providerBinary = getProviderBinary(provider);
+  const providerName = getProviderDisplayName(provider);
 
-  if (!commandExists('claude')) {
-    issues.push('claude CLI not found. Install Claude Code: https://docs.anthropic.com/en/docs/claude-code');
+  if (!commandExists(providerBinary)) {
+    issues.push(
+      provider === 'codex'
+        ? 'codex CLI not found. Install Codex and ensure it is on your PATH.'
+        : 'claude CLI not found. Install Claude Code: https://docs.anthropic.com/en/docs/claude-code'
+    );
   }
 
   if (!commandExists('node')) {
@@ -38,7 +46,9 @@ export function checkPrerequisites() {
   }
 
   return {
-    claude: getVersion('claude', '--version'),
+    provider,
+    providerName,
+    agent: getVersion(providerBinary, '--version'),
     node: getVersion('node'),
   };
 }

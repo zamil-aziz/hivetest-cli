@@ -12,7 +12,7 @@ const program = new Command();
 
 program
   .name('hivetest')
-  .description('QA Test Orchestrator for Claude Code')
+  .description('QA test orchestrator for Claude Code and Codex')
   .version('0.1.0');
 
 program
@@ -22,12 +22,12 @@ program
 
 program
   .command('generate')
-  .description('Launch Opus to explore app and generate test plans + CLAUDE.md')
+  .description('Launch the configured generate model to explore the app and write test plans')
   .action(generateCommand);
 
 program
   .command('run')
-  .description('Execute test plans in parallel via Terminal.app + Claude Code')
+  .description('Execute test plans in parallel via Terminal.app and the configured provider')
   .argument('[plans...]', 'Plan numbers to execute (e.g., 05 06 07)')
   .option('--max <n>', 'Max parallel instances (overrides config)')
   .option('--headless', 'Run browsers in headless mode')

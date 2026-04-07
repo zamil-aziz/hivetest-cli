@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
+import { getDefaultModels } from './provider.js';
 
 const CONFIG_FILE = 'hivetest.config.json';
 
@@ -46,10 +47,11 @@ export async function loadConfig(dir = process.cwd()) {
     throw new Error('Missing auth.passwordEnvVar in config');
   }
 
+  config.provider = config.provider || 'claude';
+
   // Apply defaults
   config.models = {
-    generate: 'claude-opus-4-6',
-    execute: 'claude-sonnet-4-6',
+    ...getDefaultModels(config.provider),
     ...config.models,
   };
 

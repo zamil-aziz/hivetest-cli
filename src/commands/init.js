@@ -4,6 +4,7 @@ import { resolve, basename } from 'path';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { getConfigPath, configExists } from '../lib/config.js';
+import { getDefaultModels } from '../lib/provider.js';
 
 export async function initCommand() {
   const cwd = process.cwd();
@@ -36,6 +37,16 @@ export async function initCommand() {
   }
 
   const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'provider',
+      message: 'Agent provider:',
+      choices: [
+        { name: 'Claude Code', value: 'claude' },
+        { name: 'Codex', value: 'codex' },
+      ],
+      default: 'claude',
+    },
     {
       type: 'input',
       name: 'name',
@@ -175,7 +186,9 @@ export async function initCommand() {
     }
   }
 
+  const defaultModels = getDefaultModels(answers.provider);
   const config = {
+    provider: answers.provider,
     name: answers.name,
     url: answers.url,
     description: answers.description,
@@ -184,8 +197,8 @@ export async function initCommand() {
       passwordEnvVar: 'HIVETEST_PASSWORD',
     },
     models: {
-      generate: 'claude-opus-4-6',
-      execute: 'claude-sonnet-4-6',
+      generate: defaultModels.generate,
+      execute: defaultModels.execute,
     },
     directories: {
       testPlans: 'testplans',

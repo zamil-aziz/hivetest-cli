@@ -1,18 +1,20 @@
 # hivetest-cli
 
-QA Test Orchestrator for Claude Code — generate test plans, execute in parallel, aggregate results.
+QA test orchestrator for Claude Code and Codex — generate test plans, execute in parallel, aggregate results.
 
 hivetest automates end-to-end QA testing using a two-phase model:
 
-1. **Generate** — Claude Opus explores your application via browser, maps every section, and writes detailed test plans to disk
-2. **Run** — Claude Sonnet instances execute those plans in parallel via Terminal.app, each with its own browser and isolated working directory
+1. **Generate** — a high-capability model explores your application via browser, maps every section, and writes detailed test plans to disk
+2. **Run** — efficient agent instances execute those plans in parallel via Terminal.app, each with its own browser and isolated working directory
 
 Results are written incrementally per test case, then aggregated into a summary report.
 
 ## Prerequisites
 
 - **Node.js** >= 18
-- **Claude Code CLI** — [installation guide](https://docs.anthropic.com/en/docs/claude-code)
+- One supported agent CLI:
+  - **Claude Code CLI** — [installation guide](https://docs.anthropic.com/en/docs/claude-code)
+  - **Codex CLI**
 
 ## Installation
 
@@ -26,10 +28,10 @@ npm install -g hivetest-cli
 # 1. Initialize config, directories, and save password to .env
 hivetest init
 
-# 2. Generate test plans (Opus 4.6 explores your app)
+# 2. Generate test plans
 hivetest generate
 
-# 3. Execute plans in parallel (Sonnet 4.6 runs tests)
+# 3. Execute plans in parallel
 hivetest run
 
 # 4. View aggregated results
@@ -43,6 +45,7 @@ hivetest report
 Interactive setup that creates `hivetest.config.json` and the `testplans/` and `results/` directories.
 
 Prompts for:
+- Agent provider (`claude` or `codex`)
 - Application name, URL, and description
 - Test account email
 - Test account password
@@ -55,7 +58,11 @@ Playwright MCP is added automatically if not already present.
 
 ### `hivetest generate`
 
-Launches an interactive Claude Code session (Opus) that:
+Launches an interactive agent session for the configured provider and generate model. By default:
+- Claude: `claude-opus-4-6`
+- Codex: `gpt-5.4`
+
+The session:
 1. Navigates to your app and logs in
 2. Maps all sections from the navigation
 3. Queries the database schema via MCP
@@ -71,7 +78,7 @@ Usage: hivetest generate
 
 ### `hivetest run [plans...] [--max <n>]`
 
-Executes test plans in parallel using Terminal.app. Each instance gets its own working directory with symlinked config, a dedicated Playwright browser profile, and a tiled browser window.
+Executes test plans in parallel using Terminal.app. Each instance gets its own working directory with symlinked config, provider-specific runtime config, a dedicated Playwright browser profile, and a tiled browser window.
 
 ```
 Usage: hivetest run [plans...] [options]
@@ -116,6 +123,7 @@ Options:
 
 ```json
 {
+  "provider": "claude",
   "name": "my-app",
   "url": "https://app.example.com",
   "description": "Brief description of the application",
@@ -143,13 +151,14 @@ Options:
 
 | Field | Description |
 |-------|-------------|
+| `provider` | Agent provider: `claude` or `codex` |
 | `name` | Application name |
 | `url` | Application URL (must start with `http://` or `https://`) |
 | `description` | Brief description of the application under test |
 | `auth.email` | Test account email address |
 | `auth.passwordEnvVar` | Environment variable name for the password (always `HIVETEST_PASSWORD`) |
-| `models.generate` | Claude model for the generate phase |
-| `models.execute` | Claude model for the execute phase |
+| `models.generate` | Model for the generate phase |
+| `models.execute` | Model for the execute/run/test phases |
 | `directories.testPlans` | Directory for generated test plan files |
 | `directories.results` | Directory for test execution results |
 | `symlinks` | Files symlinked into each instance directory |
@@ -157,6 +166,11 @@ Options:
 | `playwright` | Playwright MCP configuration with per-instance user data dirs |
 
 The `maxInstances` value is hardcoded to **4** (2x2 grid layout) and cannot be changed via config.
+
+Recommended model pairings:
+
+- Claude: `claude-opus-4-6` for `generate`, `claude-sonnet-4-6` for `execute`
+- Codex: `gpt-5.4` for `generate`, `gpt-5.4-mini` for `execute`
 
 ## Authentication
 
@@ -189,11 +203,14 @@ your-project/
 
 Each instance directory is a shallow working copy with symlinks to `CLAUDE.md`, `testplans/`, `results/`, and its own `.mcp.json` configured with a unique Playwright browser profile.
 
+- Claude instances receive a generated `.mcp.json`
+- Codex instances receive a generated `.codex/config.toml`
+
 ## How It Works
 
-**Generate phase**: A single Claude Opus session uses the Playwright MCP to control a browser, exploring every section of your application. It writes test plans incrementally to disk — one file per section — so progress survives context compaction or crashes. It also creates `CLAUDE.md` as a persistent knowledge base for the execute phase.
+**Generate phase**: A single agent session uses the Playwright MCP to control a browser, exploring every section of your application. It writes test plans incrementally to disk — one file per section — so progress survives context compaction or crashes. It also creates `CLAUDE.md` as a persistent knowledge base for the execute phase.
 
-**Run phase**: Multiple Claude Sonnet instances launch in parallel in separate Terminal.app windows. Each instance gets assigned a subset of test plans, its own working directory, and a dedicated Playwright browser session. Browser windows are automatically tiled in a 2x2 grid on screen. Each instance reads its assigned test plans, executes test cases via the browser, and writes results to the shared `results/` directory after every test case.
+**Run phase**: Multiple agent instances launch in parallel in separate Terminal.app windows. Each instance gets assigned a subset of test plans, its own working directory, and a dedicated Playwright browser session. Browser windows are automatically tiled in a 2x2 grid on screen. Each instance reads its assigned test plans, executes test cases via the browser, and writes results to the shared `results/` directory after every test case.
 
 **Report phase**: Parses all result files, counts PASS/FAIL/BLOCKED/PENDING per plan, calculates the overall pass rate, and optionally outputs JSON or writes a markdown summary file.
 

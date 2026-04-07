@@ -1,21 +1,25 @@
 import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
-import { readFile, writeFile, unlink } from 'fs/promises';
+import { mkdir, readFile, rm, writeFile, unlink } from 'fs/promises';
 import { resolve } from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { loadConfig, getPassword, loadDotEnv } from '../lib/config.js';
 import { checkPrerequisites } from '../lib/prerequisites.js';
 import { buildGeneratePrompt } from '../lib/prompts.js';
-import { buildClaudeArgs } from '../lib/claude.js';
-import { writeMcpConfig } from '../lib/mcp.js';
+import {
+  buildProviderArgs,
+  getProviderBinary,
+  getProviderDisplayName,
+} from '../lib/provider.js';
+import { getRuntimeConfigPath, writeRuntimeConfig } from '../lib/mcp.js';
 
 export async function generateCommand() {
   const cwd = process.cwd();
   const config = await loadConfig(cwd);
   await loadDotEnv(cwd);
 
-  checkPrerequisites();
+  checkPrerequisites(config);
 
   // Get password
   let password = getPassword(config);
@@ -35,36 +39,54 @@ export async function generateCommand() {
   let prompt = buildGeneratePrompt(config);
   prompt += `\n\n## Credentials\n- **Email**: ${config.auth.email}\n- **Password**: ${password}`;
 
-  console.log(chalk.cyan(`Launching Claude Code (${config.models.generate}) to explore and generate test plans...`));
+  console.log(chalk.cyan(`Launching ${getProviderDisplayName(config.provider)} (${config.models.generate}) to explore and generate test plans...`));
   console.log(chalk.gray('This is an interactive session — you can observe and intervene.\n'));
 
-  // Write .mcp.json with Playwright + configured MCP servers
-  const mcpPath = resolve(cwd, '.mcp.json');
-  let mcpBackup = null;
+  // Write provider runtime config for the session
+  const runtimeConfigPath = getRuntimeConfigPath(config.provider, cwd);
+  const codexDir = resolve(cwd, '.codex');
+  const hadCodexDir = existsSync(codexDir);
+  let runtimeBackup = null;
 
-  if (existsSync(mcpPath)) {
-    mcpBackup = await readFile(mcpPath, 'utf-8');
+  if (existsSync(runtimeConfigPath)) {
+    runtimeBackup = await readFile(runtimeConfigPath, 'utf-8');
   }
 
-  await writeMcpConfig(cwd, config, 0, undefined, cwd);
+  if (config.provider === 'codex') {
+    await mkdir(codexDir, { recursive: true });
+  }
+
+  await writeRuntimeConfig(cwd, config, 0, undefined, cwd, false, config.models.generate, {
+    includeInstructionsFile: false,
+  });
 
   try {
-    // Build args and spawn directly — no shell, no file
-    const args = [...buildClaudeArgs({ model: config.models.generate }), prompt];
+    const args = [
+      ...buildProviderArgs({
+        provider: config.provider,
+        model: config.models.generate,
+        phase: 'generate',
+      }),
+      prompt,
+    ];
+    const binary = getProviderBinary(config.provider);
 
-    const result = spawnSync('claude', args, { stdio: 'inherit', cwd });
+    const result = spawnSync(binary, args, { stdio: 'inherit', cwd });
 
     if (result.status === 130) {
       console.log(chalk.yellow('\nSession interrupted.'));
     } else if (result.status !== 0) {
-      console.error(chalk.red(`\nClaude Code exited with code ${result.status}`));
+      console.error(chalk.red(`\n${getProviderDisplayName(config.provider)} exited with code ${result.status}`));
     }
   } finally {
-    // Restore or clean up .mcp.json
-    if (mcpBackup !== null) {
-      await writeFile(mcpPath, mcpBackup);
+    // Restore or clean up provider runtime config
+    if (runtimeBackup !== null) {
+      await writeFile(runtimeConfigPath, runtimeBackup);
     } else {
-      await unlink(mcpPath).catch(() => {});
+      await unlink(runtimeConfigPath).catch(() => {});
+      if (config.provider === 'codex' && !hadCodexDir) {
+        await rm(codexDir, { recursive: true, force: true }).catch(() => {});
+      }
     }
   }
 
