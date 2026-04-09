@@ -152,8 +152,10 @@ ${planList}
 Execute each test plan sequentially. For each test plan file:
 
 1. **Read the test plan** from the testplans/ directory
-2. **Create the results file** in results/ with ALL test cases pre-populated as PENDING
-3. **Execute each test case** using the browser (Playwright MCP) and database queries:
+2. **Check for an existing results file** at results/XX-name.md (same number prefix as the plan):
+   - **If it does NOT exist**: Create it with ALL test cases pre-populated as PENDING, then execute every case.
+   - **If it DOES exist (resume mode)**: Read it. Re-execute ONLY rows marked BLOCKED or PENDING — leave PASS and FAIL rows, the "Bugs Found" section, and the "Notes" section untouched (you may append new entries, but do not remove or rewrite existing ones). If the test plan has new test cases not yet in the results file, append them as PENDING and execute them. Update the Run date at the top to today.
+3. **Execute each test case to be run** using the browser (Playwright MCP) and database queries:
    - Navigate to the relevant page
    - Perform the steps described
    - Verify expected results in the UI (and database if available)
