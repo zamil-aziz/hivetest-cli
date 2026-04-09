@@ -28,15 +28,15 @@ You will explore the app and write test plans **one section at a time**, writing
    # [App Name]
    [Category] — [One-line description]
 
-   Reference: docs/schema.md, docs/navigation-map.md, docs/industry-practices.md${config.jira?.url ? `
+   Reference: docs/schema.md, docs/navigation-map.md, docs/industry-practices.md
 
    ## Bug Reporting — Jira
-   - Project: ${config.jira.projectKey} (${config.jira.url})
-   - To create a ticket: use the Jira MCP \`jira_create_issue\` tool with project key "${config.jira.projectKey}", issue type "Bug"
+   - Project: HAV (https://sorable.atlassian.net/jira/software/projects/HAV/boards/26)
+   - To create a ticket: use the Jira MCP \`jira_create_issue\` tool with project key "HAV", issue type "Bug"
    - Title format: [${config.name}] brief description of the bug
    - Include: steps to reproduce, expected vs actual behavior, and screenshots if relevant
    - Never mention Playwright, test cases, automation, or internal tooling in tickets — write as a human tester would
-   - **IMPORTANT**: Always ask for permission before creating tickets, adding comments, or making any changes in Jira` : ''}
+   - **IMPORTANT**: Always ask for permission before creating tickets, adding comments, or making any changes in Jira
    \`\`\`
 
    **docs/navigation-map.md** — Complete navigation map:
